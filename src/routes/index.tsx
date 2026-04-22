@@ -14,9 +14,12 @@ import {
   Zap,
   Users,
   Layers,
+  Moon,
+  Sun,
 } from "lucide-react";
 import { MemberAvatar } from "@/components/app/MemberAvatar";
 import MarqueeBrandsDemo from "@/components/shadcn-space/marquee/marquee-02";
+import { useTheme } from "@/lib/store";
 import { members, formatTime } from "@/lib/sample-data";
 
 export const Route = createFileRoute("/")({
@@ -59,6 +62,11 @@ function Landing() {
 }
 
 function Nav() {
+  const { theme, setTheme } = useTheme();
+  const prefersDark =
+    typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches;
+  const isDark = theme === "dark" || (theme === "system" && prefersDark);
+
   return (
     <header className="sticky top-0 z-40 border-b border-border/60 bg-background/70 backdrop-blur-xl">
       <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-6">
@@ -87,10 +95,18 @@ function Nav() {
             </Link>
           </nav>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-4">
+          <button
+            type="button"
+            onClick={() => setTheme(isDark ? "light" : "dark")}
+            aria-label={`Switch to ${isDark ? "light" : "dark"} mode`}
+            className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-border bg-surface-elevated/60 text-muted-foreground transition-colors hover:border-foreground/20 hover:text-foreground"
+          >
+            {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+          </button>
           <Link
             to="/sign-in"
-            className="hidden text-[13px] text-muted-foreground hover:text-foreground sm:inline"
+            className="hidden px-2 text-[13px] text-muted-foreground hover:text-foreground sm:inline"
           >
             Sign in
           </Link>
@@ -108,7 +124,7 @@ function Nav() {
 
 function Hero() {
   return (
-    <section className="relative overflow-hidden border-b border-border">
+    <section className="relative overflow-hidden">
       <div className="absolute inset-0 bg-grid opacity-40 [mask-image:radial-gradient(60%_60%_at_50%_30%,black,transparent)]" />
       <div className="absolute inset-x-0 top-0 h-[600px] bg-hero-glow" />
       <div className="relative mx-auto max-w-6xl px-6 pt-20 pb-24 text-center">

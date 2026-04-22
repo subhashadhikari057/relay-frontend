@@ -21,7 +21,7 @@ export default function MarqueeBrandsDemo({
   title = "Trusted by product teams at",
 }: LogoCloudProps) {
   return (
-    <section className="overflow-hidden border-b border-border py-12">
+    <section className="overflow-hidden py-12 pb-20">
       <div className="mx-auto max-w-6xl px-6 text-center">
         <p className="text-[11.5px] uppercase tracking-wider text-muted-foreground">{title}</p>
         <div className="mt-6 [mask-image:linear-gradient(to_right,transparent,black_10%,black_90%,transparent)]">
