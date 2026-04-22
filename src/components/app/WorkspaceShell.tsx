@@ -330,11 +330,13 @@ function ChannelView({
         <div className="ml-auto flex items-center gap-1">
           <button
             onClick={onOpenSearch}
-            className="relative mr-1 hidden h-8 w-[260px] items-center rounded-md border border-border bg-surface-elevated/60 pl-8 pr-12 text-left text-[12.5px] text-muted-foreground hover:border-foreground/30 hover:text-foreground md:flex"
+            className="relative mr-1 hidden h-8 w-[260px] items-center rounded-md border border-border bg-surface-elevated/60 pl-8 pr-2 text-left text-[12.5px] text-muted-foreground transition-colors hover:border-foreground/30 hover:text-foreground md:flex"
           >
             <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2" />
-            Search messages, files, people…
-            <kbd className="absolute right-2 top-1/2 -translate-y-1/2 rounded border border-border bg-background px-1 py-px text-[10px]">
+            <span className="min-w-0 flex-1 truncate leading-none">
+              Search messages, files, people…
+            </span>
+            <kbd className="ml-2 inline-flex h-5 shrink-0 items-center rounded border border-border bg-background px-1.5 text-[10px] leading-none">
               ⌘K
             </kbd>
           </button>

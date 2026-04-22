@@ -66,6 +66,15 @@ function Nav() {
   const prefersDark =
     typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches;
   const isDark = theme === "dark" || (theme === "system" && prefersDark);
+  const scrollToSection = (id: string) => (event: React.MouseEvent<HTMLAnchorElement>) => {
+    event.preventDefault();
+    const section = document.getElementById(id);
+    if (!section) return;
+
+    const top = section.getBoundingClientRect().top + window.scrollY - 88;
+    window.scrollTo({ top, behavior: "smooth" });
+    window.history.replaceState(null, "", `#${id}`);
+  };
 
   return (
     <header className="sticky top-0 z-40 border-b border-border/60 bg-background/70 backdrop-blur-xl">
@@ -78,12 +87,20 @@ function Nav() {
             <span className="text-[15px] font-semibold tracking-tight">Relay</span>
           </Link>
           <nav className="hidden items-center gap-6 text-[13px] text-muted-foreground md:flex">
-            <a href="#features" className="hover:text-foreground transition-colors">
+            <a
+              href="#features"
+              onClick={scrollToSection("features")}
+              className="hover:text-foreground transition-colors"
+            >
               Features
             </a>
-            <Link to="/pricing" className="hover:text-foreground transition-colors">
+            <a
+              href="#pricing"
+              onClick={scrollToSection("pricing")}
+              className="hover:text-foreground transition-colors"
+            >
               Pricing
-            </Link>
+            </a>
             <a href="#" className="hover:text-foreground transition-colors">
               Customers
             </a>
@@ -253,7 +270,7 @@ function Features() {
     },
   ];
   return (
-    <section className="border-b border-border py-24">
+    <section id="features" className="scroll-mt-24 border-b border-border py-24">
       <div className="mx-auto max-w-6xl px-6">
         <div className="max-w-2xl">
           <p className="text-[11.5px] uppercase tracking-wider text-muted-foreground">
@@ -535,7 +552,7 @@ function Pricing() {
     },
   ];
   return (
-    <section className="border-b border-border py-24">
+    <section id="pricing" className="scroll-mt-24 border-b border-border py-24">
       <div className="mx-auto max-w-6xl px-6">
         <div className="text-center">
           <p className="text-[11.5px] uppercase tracking-wider text-muted-foreground">Pricing</p>
