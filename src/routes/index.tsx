@@ -143,16 +143,10 @@ function Hero() {
         <div className="mt-7 flex items-center justify-center gap-2">
           <Link
             to="/sign-up"
-            className="inline-flex items-center gap-1.5 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90 transition"
+            className="hero-cta-pop inline-flex items-center gap-1.5 rounded-md border border-primary bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition duration-200 hover:-translate-x-1 hover:-translate-y-1 active:translate-x-0 active:translate-y-0 active:shadow-none"
           >
             Get started <ArrowRight className="h-4 w-4" />
           </Link>
-          <a
-            href="#"
-            className="inline-flex items-center gap-1.5 rounded-md border border-border bg-surface-elevated/60 px-4 py-2 text-sm font-medium text-foreground hover:border-foreground/30 transition"
-          >
-            Book a demo
-          </a>
         </div>
 
         {/* Hero preview card */}
