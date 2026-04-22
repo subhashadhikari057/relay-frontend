@@ -16,6 +16,7 @@ import {
   Layers,
 } from "lucide-react";
 import { MemberAvatar } from "@/components/app/MemberAvatar";
+import MarqueeBrandsDemo from "@/components/shadcn-space/marquee/marquee-02";
 import { members, formatTime } from "@/lib/sample-data";
 
 export const Route = createFileRoute("/")({
@@ -205,22 +206,7 @@ function Hero() {
 }
 
 function LogoCloud() {
-  return (
-    <section className="border-b border-border py-12">
-      <div className="mx-auto max-w-6xl px-6 text-center">
-        <p className="text-[11.5px] uppercase tracking-wider text-muted-foreground">
-          Trusted by product teams at
-        </p>
-        <div className="mt-6 flex flex-wrap items-center justify-center gap-x-10 gap-y-4 text-foreground/40">
-          {["Linear", "Stripe", "Vercel", "Supabase", "Notion", "Cursor", "Anthropic"].map((b) => (
-            <span key={b} className="text-base font-semibold tracking-tight">
-              {b}
-            </span>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
+  return <MarqueeBrandsDemo />;
 }
 
 function Features() {
