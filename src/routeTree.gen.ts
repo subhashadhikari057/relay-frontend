@@ -14,7 +14,6 @@ import { Route as SignUpRouteImport } from './routes/sign-up'
 import { Route as SignInRouteImport } from './routes/sign-in'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
-import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as PeopleRouteImport } from './routes/people'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as HelpRouteImport } from './routes/help'
@@ -54,11 +53,6 @@ const SettingsRoute = SettingsRouteImport.update({
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
   path: '/reset-password',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PricingRoute = PricingRouteImport.update({
-  id: '/pricing',
-  path: '/pricing',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PeopleRoute = PeopleRouteImport.update({
@@ -145,7 +139,6 @@ export interface FileRoutesByFullPath {
   '/help': typeof HelpRoute
   '/onboarding': typeof OnboardingRoute
   '/people': typeof PeopleRoute
-  '/pricing': typeof PricingRoute
   '/reset-password': typeof ResetPasswordRoute
   '/settings': typeof SettingsRouteWithChildren
   '/sign-in': typeof SignInRoute
@@ -168,7 +161,6 @@ export interface FileRoutesByTo {
   '/help': typeof HelpRoute
   '/onboarding': typeof OnboardingRoute
   '/people': typeof PeopleRoute
-  '/pricing': typeof PricingRoute
   '/reset-password': typeof ResetPasswordRoute
   '/sign-in': typeof SignInRoute
   '/sign-up': typeof SignUpRoute
@@ -191,7 +183,6 @@ export interface FileRoutesById {
   '/help': typeof HelpRoute
   '/onboarding': typeof OnboardingRoute
   '/people': typeof PeopleRoute
-  '/pricing': typeof PricingRoute
   '/reset-password': typeof ResetPasswordRoute
   '/settings': typeof SettingsRouteWithChildren
   '/sign-in': typeof SignInRoute
@@ -216,7 +207,6 @@ export interface FileRouteTypes {
     | '/help'
     | '/onboarding'
     | '/people'
-    | '/pricing'
     | '/reset-password'
     | '/settings'
     | '/sign-in'
@@ -239,7 +229,6 @@ export interface FileRouteTypes {
     | '/help'
     | '/onboarding'
     | '/people'
-    | '/pricing'
     | '/reset-password'
     | '/sign-in'
     | '/sign-up'
@@ -261,7 +250,6 @@ export interface FileRouteTypes {
     | '/help'
     | '/onboarding'
     | '/people'
-    | '/pricing'
     | '/reset-password'
     | '/settings'
     | '/sign-in'
@@ -285,7 +273,6 @@ export interface RootRouteChildren {
   HelpRoute: typeof HelpRoute
   OnboardingRoute: typeof OnboardingRoute
   PeopleRoute: typeof PeopleRoute
-  PricingRoute: typeof PricingRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   SettingsRoute: typeof SettingsRouteWithChildren
   SignInRoute: typeof SignInRoute
@@ -328,13 +315,6 @@ declare module '@tanstack/react-router' {
       path: '/reset-password'
       fullPath: '/reset-password'
       preLoaderRoute: typeof ResetPasswordRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/pricing': {
-      id: '/pricing'
-      path: '/pricing'
-      fullPath: '/pricing'
-      preLoaderRoute: typeof PricingRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/people': {
@@ -479,7 +459,6 @@ const rootRouteChildren: RootRouteChildren = {
   HelpRoute: HelpRoute,
   OnboardingRoute: OnboardingRoute,
   PeopleRoute: PeopleRoute,
-  PricingRoute: PricingRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   SettingsRoute: SettingsRouteWithChildren,
   SignInRoute: SignInRoute,
