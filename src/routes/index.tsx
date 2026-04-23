@@ -425,59 +425,122 @@ function Testimonials() {
 }
 
 function Comparison() {
-  const rows = [
-    { f: "Calm-by-default notifications", relay: true, slack: false, discord: false },
-    { f: "Threads in side-panel (no context loss)", relay: true, slack: false, discord: false },
-    { f: "Sub-50ms message delivery", relay: true, slack: true, discord: true },
-    { f: "Native command palette (⌘K)", relay: true, slack: false, discord: false },
-    { f: "Unlimited message history (Pro)", relay: true, slack: false, discord: true },
-    { f: "End-to-end encrypted private channels", relay: true, slack: false, discord: false },
-    { f: "Built-in workspace switcher", relay: true, slack: true, discord: false },
+  const options = [
+    {
+      name: "Relay",
+      eyebrow: "Focused product teams",
+      description:
+        "A calm workspace for teams that want channels, threads, search, and decisions to feel tidy by default.",
+      bestFor:
+        "Small to mid-sized teams that care about speed, craft, and lower-noise collaboration.",
+      tone: "Quiet, intentional, product-first",
+      model: "Channels with side-panel threads and fast workspace navigation",
+      focus: ["Calm notification defaults", "High-signal team chat", "Polished daily workflow"],
+      featured: true,
+    },
+    {
+      name: "Slack",
+      eyebrow: "Broad workplace communication",
+      description:
+        "A mature communication hub with a large ecosystem, deep integrations, and broad enterprise adoption.",
+      bestFor:
+        "Organizations that need a widely adopted platform with extensive app and admin coverage.",
+      tone: "Flexible, familiar, integration-heavy",
+      model: "Channels, DMs, huddles, apps, and workflow automation",
+      focus: ["Large integration marketplace", "Enterprise familiarity", "Broad admin surface"],
+    },
+    {
+      name: "Discord",
+      eyebrow: "Community-first real-time chat",
+      description:
+        "A real-time conversation platform shaped around communities, voice rooms, and persistent social spaces.",
+      bestFor:
+        "Communities, creators, gaming groups, and teams that prioritize always-on voice and social presence.",
+      tone: "Lively, social, community-led",
+      model: "Servers, channels, voice rooms, roles, and community moderation",
+      focus: ["Voice-first hangouts", "Community moderation", "Persistent social spaces"],
+    },
   ];
-  const Cell = ({ ok }: { ok: boolean }) =>
-    ok ? (
-      <Check className="mx-auto h-4 w-4 text-[oklch(0.72_0.16_150)]" />
-    ) : (
-      <span className="text-muted-foreground">—</span>
-    );
+
   return (
     <section className="border-b border-border py-24">
-      <div className="mx-auto max-w-5xl px-6">
+      <div className="mx-auto max-w-6xl px-6">
         <div className="max-w-2xl">
           <p className="text-[11.5px] uppercase tracking-wider text-muted-foreground">
             How Relay compares
           </p>
           <h2 className="mt-3 text-balance text-4xl font-semibold tracking-tight">
-            Built for teams that value craft.
+            Different tools, different center of gravity.
           </h2>
+          <p className="mt-3 text-[15px] leading-relaxed text-muted-foreground">
+            Relay is not trying to be every chat product at once. It is designed for focused teams
+            that want collaboration to stay fast, searchable, and calm.
+          </p>
         </div>
-        <div className="mt-10 overflow-hidden rounded-xl border border-border bg-surface/40">
-          <table className="w-full text-[13.5px]">
-            <thead>
-              <tr className="border-b border-border bg-foreground/[0.02] text-[11.5px] uppercase tracking-wider text-muted-foreground">
-                <th className="px-4 py-3 text-left font-medium">Feature</th>
-                <th className="px-4 py-3 text-center font-semibold text-foreground">Relay</th>
-                <th className="px-4 py-3 text-center font-medium">Slack</th>
-                <th className="px-4 py-3 text-center font-medium">Discord</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
-              {rows.map((r) => (
-                <tr key={r.f}>
-                  <td className="px-4 py-3 text-foreground/90">{r.f}</td>
-                  <td className="px-4 py-3 text-center">
-                    <Cell ok={r.relay} />
-                  </td>
-                  <td className="px-4 py-3 text-center">
-                    <Cell ok={r.slack} />
-                  </td>
-                  <td className="px-4 py-3 text-center">
-                    <Cell ok={r.discord} />
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+
+        <div className="mt-10 grid gap-4 lg:grid-cols-3">
+          {options.map((option) => (
+            <article
+              key={option.name}
+              className={`relative rounded-xl border p-6 ${
+                option.featured
+                  ? "border-foreground/35 bg-surface shadow-elegant"
+                  : "border-border bg-surface/40"
+              }`}
+            >
+              {option.featured && (
+                <span className="absolute right-4 top-4 rounded-full border border-foreground/30 bg-foreground/[0.08] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider">
+                  Relay focus
+                </span>
+              )}
+              <p className="text-[11.5px] uppercase tracking-wider text-muted-foreground">
+                {option.eyebrow}
+              </p>
+              <h3 className="mt-3 text-2xl font-semibold tracking-tight">{option.name}</h3>
+              <p className="mt-3 min-h-[72px] text-[13.5px] leading-relaxed text-muted-foreground">
+                {option.description}
+              </p>
+
+              <div className="mt-5 space-y-4 border-t border-border pt-5">
+                <div>
+                  <div className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+                    Best fit
+                  </div>
+                  <p className="mt-1.5 text-[13px] leading-relaxed text-foreground/85">
+                    {option.bestFor}
+                  </p>
+                </div>
+                <div>
+                  <div className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+                    Product feel
+                  </div>
+                  <p className="mt-1.5 text-[13px] leading-relaxed text-foreground/85">
+                    {option.tone}
+                  </p>
+                </div>
+                <div>
+                  <div className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+                    Conversation model
+                  </div>
+                  <p className="mt-1.5 text-[13px] leading-relaxed text-foreground/85">
+                    {option.model}
+                  </p>
+                </div>
+              </div>
+
+              <ul className="mt-5 space-y-2">
+                {option.focus.map((item) => (
+                  <li
+                    key={item}
+                    className="flex items-start gap-2 text-[12.5px] text-muted-foreground"
+                  >
+                    <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-foreground" />
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </article>
+          ))}
         </div>
       </div>
     </section>
