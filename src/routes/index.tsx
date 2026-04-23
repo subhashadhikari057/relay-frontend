@@ -101,9 +101,6 @@ function Nav() {
             >
               Pricing
             </a>
-            <a href="#" className="hover:text-foreground transition-colors">
-              Customers
-            </a>
             <Link to="/changelog" className="hover:text-foreground transition-colors">
               Changelog
             </Link>

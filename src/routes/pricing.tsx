@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { Check, ArrowRight } from "lucide-react";
+import { SiteNav } from "@/components/marketing/SiteNav";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/pricing")({
@@ -97,19 +98,7 @@ function PricingPage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <header className="sticky top-0 z-40 border-b border-border/60 bg-background/70 backdrop-blur-xl">
-        <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4 sm:px-6">
-          <Link to="/" className="flex items-center gap-2">
-            <span className="flex h-7 w-7 items-center justify-center rounded-md bg-foreground text-background font-bold text-sm">
-              H
-            </span>
-            <span className="text-[15px] font-semibold tracking-tight">Relay</span>
-          </Link>
-          <Link to="/sign-in" className="text-[13px] text-muted-foreground hover:text-foreground">
-            Sign in
-          </Link>
-        </div>
-      </header>
+      <SiteNav />
 
       <section className="px-4 pt-16 pb-10 sm:pt-24 sm:pb-14">
         <div className="mx-auto max-w-3xl text-center">
