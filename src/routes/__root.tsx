@@ -1,4 +1,5 @@
 import { Outlet, Link, createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
+import { Analytics } from "@vercel/analytics/react";
 import { Toaster } from "sonner";
 import { ThemeBoot } from "@/components/ThemeBoot";
 
@@ -93,6 +94,7 @@ function RootShell({ children }: { children: React.ReactNode }) {
       <body className="bg-background text-foreground antialiased">
         <ThemeBoot />
         {children}
+        <Analytics />
         <Toaster theme="dark" position="bottom-right" richColors closeButton />
         <Scripts />
       </body>
