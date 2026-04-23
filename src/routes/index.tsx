@@ -14,12 +14,10 @@ import {
   Zap,
   Users,
   Layers,
-  Moon,
-  Sun,
 } from "lucide-react";
 import { MemberAvatar } from "@/components/app/MemberAvatar";
+import { SiteNav } from "@/components/marketing/SiteNav";
 import MarqueeBrandsDemo from "@/components/shadcn-space/marquee/marquee-02";
-import { useTheme } from "@/lib/store";
 import { members, formatTime } from "@/lib/sample-data";
 
 export const Route = createFileRoute("/")({
@@ -46,7 +44,7 @@ export const Route = createFileRoute("/")({
 function Landing() {
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <Nav />
+      <SiteNav />
       <Hero />
       <LogoCloud />
       <Features />
@@ -58,81 +56,6 @@ function Landing() {
       <FinalCTA />
       <Footer />
     </div>
-  );
-}
-
-function Nav() {
-  const { theme, setTheme } = useTheme();
-  const prefersDark =
-    typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches;
-  const isDark = theme === "dark" || (theme === "system" && prefersDark);
-  const scrollToSection = (id: string) => (event: React.MouseEvent<HTMLAnchorElement>) => {
-    event.preventDefault();
-    const section = document.getElementById(id);
-    if (!section) return;
-
-    const top = section.getBoundingClientRect().top + window.scrollY - 88;
-    window.scrollTo({ top, behavior: "smooth" });
-    window.history.replaceState(null, "", `#${id}`);
-  };
-
-  return (
-    <header className="sticky top-0 z-40 border-b border-border/60 bg-background/70 backdrop-blur-xl">
-      <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-6">
-        <div className="flex items-center gap-8">
-          <Link to="/" className="flex items-center gap-2">
-            <span className="flex h-7 w-7 items-center justify-center rounded-md bg-foreground text-background font-bold text-sm">
-              R
-            </span>
-            <span className="text-[15px] font-semibold tracking-tight">Relay</span>
-          </Link>
-          <nav className="hidden items-center gap-6 text-[13px] text-muted-foreground md:flex">
-            <a
-              href="#features"
-              onClick={scrollToSection("features")}
-              className="hover:text-foreground transition-colors"
-            >
-              Features
-            </a>
-            <a
-              href="#pricing"
-              onClick={scrollToSection("pricing")}
-              className="hover:text-foreground transition-colors"
-            >
-              Pricing
-            </a>
-            <Link to="/changelog" className="hover:text-foreground transition-colors">
-              Changelog
-            </Link>
-            <Link to="/help" className="hover:text-foreground transition-colors">
-              Help
-            </Link>
-          </nav>
-        </div>
-        <div className="flex items-center gap-4">
-          <button
-            type="button"
-            onClick={() => setTheme(isDark ? "light" : "dark")}
-            aria-label={`Switch to ${isDark ? "light" : "dark"} mode`}
-            className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-border bg-surface-elevated/60 text-muted-foreground transition-colors hover:border-foreground/20 hover:text-foreground"
-          >
-            {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-          </button>
-          <Link
-            to="/sign-in"
-            className="hidden px-2 text-[13px] text-muted-foreground hover:text-foreground sm:inline"
-          >
-            Sign in
-          </Link>
-          <Link
-            to="/sign-up"
-            className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-[13px] font-medium text-primary-foreground hover:opacity-90 transition"
-          >
-            Get started <ArrowRight className="h-3.5 w-3.5" />
-          </Link>
-        </div>
-      </div>
-    </header>
   );
 }
 

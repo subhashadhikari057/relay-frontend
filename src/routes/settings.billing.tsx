@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { Check, Download } from "lucide-react";
 import {
   SettingsHeader,
@@ -39,9 +39,9 @@ function BillingPage() {
           </div>
           <div className="flex gap-2">
             <button className={settingsBtnGhost}>Cancel plan</button>
-            <Link to="/pricing" className={settingsBtnPrimary}>
+            <a href="/#pricing" className={settingsBtnPrimary}>
               Upgrade
-            </Link>
+            </a>
           </div>
         </div>
 
