@@ -16,13 +16,23 @@ import type {
 } from "@/types/api.types";
 
 async function resolveWorkspaceAfterAuth(activeWorkspaceId?: string | null) {
-  if (!activeWorkspaceId) {
+  try {
+    if (activeWorkspaceId) {
+      const workspace = await workspacesModule.getById(activeWorkspaceId);
+      rememberCurrentWorkspace(workspace);
+      return workspace;
+    }
+
+    const fallback = await workspacesModule.listMine();
+    const workspace = fallback.workspaces[0] ?? null;
+    if (workspace) {
+      rememberCurrentWorkspace(workspace);
+    }
+
+    return workspace;
+  } catch {
     return null;
   }
-
-  const workspace = await workspacesModule.getById(activeWorkspaceId);
-  rememberCurrentWorkspace(workspace);
-  return workspace;
 }
 
 async function handleAuthSuccess(
@@ -34,9 +44,19 @@ async function handleAuthSuccess(
   authModule.rememberAccessToken(data.accessToken);
   rememberCurrentUser(data.user);
   queryClient.setQueryData(queryKeys.auth.me(), data.user);
-  const workspace = await resolveWorkspaceAfterAuth(data.activeWorkspaceId);
+  const workspace =
+    data.activeWorkspace ?? (await resolveWorkspaceAfterAuth(data.activeWorkspaceId));
+
+  if (workspace) {
+    rememberCurrentWorkspace(workspace);
+  }
 
   if (workspace?.slug) {
+    if (typeof window !== "undefined") {
+      window.location.assign(`/app/${workspace.slug}`);
+      return;
+    }
+
     void navigate({
       to: "/app/$workspaceSlug",
       params: { workspaceSlug: workspace.slug },
@@ -46,7 +66,17 @@ async function handleAuthSuccess(
 
   if (redirectTo === "/onboarding") {
     allowOnboardingAccess();
+    if (typeof window !== "undefined") {
+      window.location.assign("/onboarding");
+      return;
+    }
+
     void navigate({ to: "/onboarding" });
+    return;
+  }
+
+  if (typeof window !== "undefined") {
+    window.location.assign("/sign-in");
     return;
   }
 

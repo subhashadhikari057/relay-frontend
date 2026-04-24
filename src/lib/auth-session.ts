@@ -1,6 +1,6 @@
 import { useSyncExternalStore } from "react";
 
-type AuthBootstrapStatus = "pending" | "authenticated" | "unauthenticated";
+export type AuthBootstrapStatus = "pending" | "authenticated" | "unauthenticated";
 
 type AuthSessionState = {
   status: AuthBootstrapStatus;
@@ -17,6 +17,9 @@ function emit() {
 }
 
 export function setAuthSessionState(nextState: AuthSessionState) {
+  if (state.status === nextState.status) {
+    return;
+  }
   state = nextState;
   emit();
 }

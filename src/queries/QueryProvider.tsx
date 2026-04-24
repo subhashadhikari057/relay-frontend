@@ -1,7 +1,7 @@
 import { QueryClientProvider, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { authModule } from "@/api/modules/auth.module";
-import { workspacesModule } from "@/api/modules/workspaces.module";
+import type { InitialAuthSession } from "@/lib/auth-bootstrap.functions";
 import { setAuthSessionState } from "@/lib/auth-session";
 import { clearCurrentUser, rememberCurrentUser } from "@/lib/current-user";
 import { clearCurrentWorkspace, rememberCurrentWorkspace } from "@/lib/current-workspace";
@@ -9,61 +9,67 @@ import { createQueryClient } from "@/queries/client";
 import { queryKeys } from "@/queries/keys";
 import { useCurrentUser } from "@/queries/modules/auth.queries";
 
-export function QueryProvider({ children }: { children: ReactNode }) {
-  const [queryClient] = useState(() => createQueryClient());
+export function QueryProvider({
+  children,
+  initialSession,
+}: {
+  children: ReactNode;
+  initialSession: InitialAuthSession;
+}) {
+  const [queryClient] = useState(() => {
+    const client = createQueryClient();
+
+    if (initialSession.user) {
+      client.setQueryData(queryKeys.auth.me(), initialSession.user);
+    } else {
+      client.setQueryData(queryKeys.auth.me(), null);
+    }
+
+    return client;
+  });
 
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthBootstrap />
+      <AuthBootstrap initialSession={initialSession} />
       <AuthStateSync />
       {children}
     </QueryClientProvider>
   );
 }
 
-function AuthBootstrap() {
+function AuthBootstrap({ initialSession }: { initialSession: InitialAuthSession }) {
   const queryClient = useQueryClient();
+  const initialUserId = initialSession.user?.id ?? null;
+  const initialWorkspaceId = initialSession.workspace?.id ?? null;
+  const initialAccessToken = initialSession.accessToken ?? null;
+  const initialStatus = initialSession.status;
+  const initialUserRef = useRef(initialSession.user);
+  const initialWorkspaceRef = useRef(initialSession.workspace);
+
+  initialUserRef.current = initialSession.user;
+  initialWorkspaceRef.current = initialSession.workspace;
 
   useEffect(() => {
-    let cancelled = false;
+    if (initialStatus === "authenticated" && initialUserRef.current) {
+      authModule.rememberAccessToken(initialAccessToken);
+      rememberCurrentUser(initialUserRef.current);
+      queryClient.setQueryData(queryKeys.auth.me(), initialUserRef.current);
 
-    async function bootstrap() {
-      setAuthSessionState({ status: "pending" });
-
-      try {
-        const auth = await authModule.refresh();
-        if (cancelled) return;
-
-        authModule.rememberAccessToken(auth.accessToken);
-        rememberCurrentUser(auth.user);
-        queryClient.setQueryData(queryKeys.auth.me(), auth.user);
-
-        if (auth.activeWorkspaceId) {
-          const workspace = await workspacesModule.getById(auth.activeWorkspaceId);
-          if (cancelled) return;
-          rememberCurrentWorkspace(workspace);
-        } else {
-          clearCurrentWorkspace();
-        }
-
-        setAuthSessionState({ status: "authenticated" });
-      } catch {
-        if (cancelled) return;
-
-        authModule.rememberAccessToken(null);
-        clearCurrentUser();
+      if (initialWorkspaceRef.current) {
+        rememberCurrentWorkspace(initialWorkspaceRef.current);
+      } else {
         clearCurrentWorkspace();
-        queryClient.setQueryData(queryKeys.auth.me(), null);
-        setAuthSessionState({ status: "unauthenticated" });
       }
+
+      setAuthSessionState({ status: "authenticated" });
+    } else {
+      authModule.rememberAccessToken(null);
+      clearCurrentUser();
+      clearCurrentWorkspace();
+      queryClient.setQueryData(queryKeys.auth.me(), null);
+      setAuthSessionState({ status: "unauthenticated" });
     }
-
-    void bootstrap();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [queryClient]);
+  }, [initialAccessToken, initialStatus, initialUserId, initialWorkspaceId, queryClient]);
 
   return null;
 }

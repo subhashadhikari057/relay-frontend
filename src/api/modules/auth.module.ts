@@ -23,6 +23,10 @@ async function refresh(): Promise<AuthTokenResponse> {
   return http.post<AuthTokenResponse>(endpoints.auth.refresh);
 }
 
+async function session(): Promise<AuthTokenResponse> {
+  return http.post<AuthTokenResponse>(endpoints.auth.session);
+}
+
 function rememberAccessToken(token: string | null) {
   setAccessToken(token);
 }
@@ -32,5 +36,6 @@ export const authModule = {
   login,
   loginWithGoogle,
   refresh,
+  session,
   rememberAccessToken,
 };

@@ -5,6 +5,7 @@ export const endpoints = {
     google: "/api/mobile/auth/google",
     me: "/api/mobile/auth/me",
     refresh: "/api/mobile/auth/refresh",
+    session: "/api/mobile/auth/session",
     logout: "/api/mobile/auth/logout",
   },
   onboarding: {

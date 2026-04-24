@@ -18,6 +18,7 @@ export type AuthTokenResponse = {
   accessToken: string;
   user: AuthUser;
   activeWorkspaceId?: string | null;
+  activeWorkspace?: WorkspaceSummary | null;
 };
 
 export type GoogleLoginRequest = {

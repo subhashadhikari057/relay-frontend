@@ -4,6 +4,7 @@ import { workspacesModule } from "@/api/modules/workspaces.module";
 import { WorkspaceShell } from "@/components/app/WorkspaceShell";
 import { useAuthSessionState } from "@/lib/auth-session";
 import { rememberCurrentWorkspace, useStoredCurrentWorkspace } from "@/lib/current-workspace";
+import { Route as RootRoute } from "@/routes/__root";
 import type { WorkspaceSummary } from "@/types/api.types";
 
 export const Route = createFileRoute("/app/$workspaceSlug")({
@@ -19,8 +20,14 @@ export const Route = createFileRoute("/app/$workspaceSlug")({
 function WorkspaceSlugPage() {
   const navigate = useNavigate();
   const { workspaceSlug } = Route.useParams();
+  const initialSession = RootRoute.useLoaderData();
   const { status } = useAuthSessionState();
   const { workspace, isHydrated } = useStoredCurrentWorkspace();
+  const initialWorkspace = initialSession.workspace;
+  const initialWorkspaceId = initialWorkspace?.id ?? null;
+  const initialWorkspaceSlug = initialWorkspace?.slug ?? null;
+  const storedWorkspaceId = workspace?.id ?? null;
+  const storedWorkspaceSlug = workspace?.slug ?? null;
   const [resolvedWorkspace, setResolvedWorkspace] = useState<WorkspaceSummary | null>(null);
   const [isResolvingWorkspace, setIsResolvingWorkspace] = useState(true);
 
@@ -35,7 +42,13 @@ function WorkspaceSlugPage() {
       return;
     }
 
-    if (workspace?.slug === workspaceSlug) {
+    if (initialWorkspaceSlug === workspaceSlug && initialWorkspace) {
+      setResolvedWorkspace(initialWorkspace);
+      setIsResolvingWorkspace(false);
+      return;
+    }
+
+    if (storedWorkspaceSlug === workspaceSlug && workspace) {
       setResolvedWorkspace(workspace);
       setIsResolvingWorkspace(false);
       return;
@@ -63,7 +76,17 @@ function WorkspaceSlugPage() {
     return () => {
       cancelled = true;
     };
-  }, [isHydrated, status, workspace, workspaceSlug]);
+  }, [
+    initialWorkspace,
+    initialWorkspaceId,
+    initialWorkspaceSlug,
+    isHydrated,
+    status,
+    storedWorkspaceId,
+    storedWorkspaceSlug,
+    workspace,
+    workspaceSlug,
+  ]);
 
   if (!isHydrated || status === "pending") {
     return null;
@@ -79,6 +102,7 @@ function WorkspaceSlugPage() {
 
   const effectiveWorkspace =
     resolvedWorkspace ??
+    initialWorkspace ??
     workspace ??
     ({
       id: workspaceSlug,

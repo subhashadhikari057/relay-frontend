@@ -1,6 +1,8 @@
 import { Outlet, createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
 import { Analytics } from "@vercel/analytics/react";
 import { Toaster } from "sonner";
+import { getInitialAuthSession } from "@/lib/auth-bootstrap.functions";
+import type { InitialAuthSession } from "@/lib/auth-bootstrap.functions";
 import { NotFoundPage } from "@/components/NotFoundPage";
 import { ThemeBoot } from "@/components/ThemeBoot";
 import { QueryProvider } from "@/queries/QueryProvider";
@@ -8,6 +10,10 @@ import { QueryProvider } from "@/queries/QueryProvider";
 import appCss from "../styles.css?url";
 
 export const Route = createRootRoute({
+  loader: () => getInitialAuthSession(),
+  staleTime: 60_000,
+  preload: false,
+  preloadStaleTime: 60_000,
   head: () => ({
     meta: [
       { charSet: "utf-8" },
@@ -56,6 +62,8 @@ export const Route = createRootRoute({
 });
 
 function RootShell({ children }: { children: React.ReactNode }) {
+  const initialSession = Route.useLoaderData() as InitialAuthSession;
+
   return (
     <html lang="en" className="dark">
       <head>
@@ -63,7 +71,7 @@ function RootShell({ children }: { children: React.ReactNode }) {
       </head>
       <body className="bg-background text-foreground antialiased">
         <ThemeBoot />
-        <QueryProvider>{children}</QueryProvider>
+        <QueryProvider initialSession={initialSession}>{children}</QueryProvider>
         <Analytics />
         <Toaster theme="dark" position="bottom-right" richColors closeButton />
         <Scripts />
