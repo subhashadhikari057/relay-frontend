@@ -31,6 +31,11 @@ export type SignupRequest = {
   displayName?: string;
 };
 
+export type LoginRequest = {
+  email: string;
+  password: string;
+};
+
 export type WorkspaceRole = "owner" | "admin" | "member" | "guest";
 export type ChannelType = "public" | "private";
 
@@ -42,6 +47,11 @@ export type WorkspaceSummary = {
   avatarUrl: string | null;
   avatarColor: string | null;
   role: WorkspaceRole;
+};
+
+export type WorkspaceListResponse = {
+  count: number;
+  workspaces: WorkspaceSummary[];
 };
 
 export type ChannelSummary = {

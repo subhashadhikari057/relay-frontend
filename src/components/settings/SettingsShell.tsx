@@ -13,6 +13,7 @@ import {
   Menu,
   X,
 } from "lucide-react";
+import { getCurrentWorkspace, getWorkspaceHomePath } from "@/lib/current-workspace";
 import { cn } from "@/lib/utils";
 
 type NavItem = {
@@ -37,6 +38,7 @@ export function SettingsShell() {
   const location = useLocation();
   const navigate = useNavigate();
   const [navOpen, setNavOpen] = useState(false);
+  const workspaceHomePath = getWorkspaceHomePath(getCurrentWorkspace());
 
   const groups = Array.from(new Set(NAV.map((n) => n.group)));
 
@@ -78,7 +80,7 @@ export function SettingsShell() {
       {/* Desktop sidebar */}
       <aside className="hidden w-[260px] shrink-0 flex-col border-r border-border bg-sidebar md:flex">
         <button
-          onClick={() => navigate({ to: "/app" })}
+          onClick={() => navigate({ to: workspaceHomePath })}
           className="flex items-center gap-2 border-b border-sidebar-border px-4 py-4 text-[13px] text-muted-foreground hover:text-foreground"
         >
           <ArrowLeft className="h-3.5 w-3.5" />
@@ -101,7 +103,7 @@ export function SettingsShell() {
           </button>
           <span className="text-[14px] font-semibold">Settings</span>
           <Link
-            to="/app"
+            to={workspaceHomePath}
             className="ml-auto text-[12px] text-muted-foreground hover:text-foreground"
           >
             Back

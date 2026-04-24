@@ -1,6 +1,9 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
+import { workspacesModule } from "@/api/modules/workspaces.module";
 import { WorkspaceShell } from "@/components/app/WorkspaceShell";
-import { useStoredCurrentWorkspace } from "@/lib/current-workspace";
+import { useAuthSessionState } from "@/lib/auth-session";
+import { rememberCurrentWorkspace, useStoredCurrentWorkspace } from "@/lib/current-workspace";
 import type { WorkspaceSummary } from "@/types/api.types";
 
 export const Route = createFileRoute("/app/$workspaceSlug")({
@@ -14,33 +17,80 @@ export const Route = createFileRoute("/app/$workspaceSlug")({
 });
 
 function WorkspaceSlugPage() {
+  const navigate = useNavigate();
   const { workspaceSlug } = Route.useParams();
+  const { status } = useAuthSessionState();
   const { workspace, isHydrated } = useStoredCurrentWorkspace();
+  const [resolvedWorkspace, setResolvedWorkspace] = useState<WorkspaceSummary | null>(null);
+  const [isResolvingWorkspace, setIsResolvingWorkspace] = useState(true);
 
-  if (!isHydrated) {
+  useEffect(() => {
+    if (status === "unauthenticated") {
+      void navigate({ to: "/sign-in", replace: true });
+    }
+  }, [navigate, status]);
+
+  useEffect(() => {
+    if (!isHydrated || status !== "authenticated") {
+      return;
+    }
+
+    if (workspace?.slug === workspaceSlug) {
+      setResolvedWorkspace(workspace);
+      setIsResolvingWorkspace(false);
+      return;
+    }
+
+    let cancelled = false;
+    setIsResolvingWorkspace(true);
+
+    void workspacesModule
+      .getBySlug(workspaceSlug)
+      .then((nextWorkspace) => {
+        if (cancelled) return;
+        rememberCurrentWorkspace(nextWorkspace);
+        setResolvedWorkspace(nextWorkspace);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setResolvedWorkspace(null);
+      })
+      .finally(() => {
+        if (cancelled) return;
+        setIsResolvingWorkspace(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isHydrated, status, workspace, workspaceSlug]);
+
+  if (!isHydrated || status === "pending") {
     return null;
   }
 
-  return <WorkspaceShell workspace={getWorkspaceForSlug(workspace, workspaceSlug)} />;
-}
-
-function getWorkspaceForSlug(
-  workspace: WorkspaceSummary | null,
-  workspaceSlug: string,
-): WorkspaceSummary {
-  if (workspace?.slug === workspaceSlug) {
-    return workspace;
+  if (status !== "authenticated") {
+    return null;
   }
 
-  return {
-    id: workspace?.id || workspaceSlug,
-    name: formatWorkspaceName(workspaceSlug),
-    slug: workspaceSlug,
-    description: workspace?.description || null,
-    avatarUrl: null,
-    avatarColor: workspace?.avatarColor || null,
-    role: workspace?.role || "owner",
-  };
+  if (isResolvingWorkspace) {
+    return null;
+  }
+
+  const effectiveWorkspace =
+    resolvedWorkspace ??
+    workspace ??
+    ({
+      id: workspaceSlug,
+      name: formatWorkspaceName(workspaceSlug),
+      slug: workspaceSlug,
+      description: null,
+      avatarUrl: null,
+      avatarColor: null,
+      role: "owner",
+    } satisfies WorkspaceSummary);
+
+  return <WorkspaceShell workspace={effectiveWorkspace} />;
 }
 
 function formatWorkspaceName(slug: string) {

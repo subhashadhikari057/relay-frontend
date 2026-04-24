@@ -19,6 +19,8 @@ import {
 } from "lucide-react";
 import { MemberAvatar } from "@/components/app/MemberAvatar";
 import MarqueeBrandsDemo from "@/components/shadcn-space/marquee/marquee-02";
+import { useAuthSessionState } from "@/lib/auth-session";
+import { getCurrentWorkspace, getWorkspaceHomePath } from "@/lib/current-workspace";
 import { useTheme } from "@/lib/store";
 import { members, formatTime } from "@/lib/sample-data";
 
@@ -63,6 +65,8 @@ function Landing() {
 
 function Nav() {
   const { theme, setTheme } = useTheme();
+  const { status } = useAuthSessionState();
+  const workspaceHomePath = getWorkspaceHomePath(getCurrentWorkspace());
   const prefersDark =
     typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches;
   const isDark = theme === "dark" || (theme === "system" && prefersDark);
@@ -121,18 +125,29 @@ function Nav() {
           >
             {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
           </button>
-          <Link
-            to="/sign-in"
-            className="hidden px-2 text-[13px] text-muted-foreground hover:text-foreground sm:inline"
-          >
-            Sign in
-          </Link>
-          <Link
-            to="/sign-up"
-            className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-[13px] font-medium text-primary-foreground hover:opacity-90 transition"
-          >
-            Get started <ArrowRight className="h-3.5 w-3.5" />
-          </Link>
+          {status === "authenticated" ? (
+            <Link
+              to={workspaceHomePath}
+              className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-[13px] font-medium text-primary-foreground hover:opacity-90 transition"
+            >
+              Dashboard <ArrowRight className="h-3.5 w-3.5" />
+            </Link>
+          ) : (
+            <>
+              <Link
+                to="/sign-in"
+                className="hidden px-2 text-[13px] text-muted-foreground hover:text-foreground sm:inline"
+              >
+                Sign in
+              </Link>
+              <Link
+                to="/sign-up"
+                className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-[13px] font-medium text-primary-foreground hover:opacity-90 transition"
+              >
+                Get started <ArrowRight className="h-3.5 w-3.5" />
+              </Link>
+            </>
+          )}
         </div>
       </div>
     </header>
