@@ -30,6 +30,7 @@ import { Route as SettingsMembersRouteImport } from './routes/settings.members'
 import { Route as SettingsIntegrationsRouteImport } from './routes/settings.integrations'
 import { Route as SettingsBillingRouteImport } from './routes/settings.billing'
 import { Route as SettingsAppearanceRouteImport } from './routes/settings.appearance'
+import { Route as AppWorkspaceSlugRouteImport } from './routes/app.$workspaceSlug'
 
 const StatusRoute = StatusRouteImport.update({
   id: '/status',
@@ -136,10 +137,15 @@ const SettingsAppearanceRoute = SettingsAppearanceRouteImport.update({
   path: '/appearance',
   getParentRoute: () => SettingsRoute,
 } as any)
+const AppWorkspaceSlugRoute = AppWorkspaceSlugRouteImport.update({
+  id: '/$workspaceSlug',
+  path: '/$workspaceSlug',
+  getParentRoute: () => AppRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/app': typeof AppRoute
+  '/app': typeof AppRouteWithChildren
   '/changelog': typeof ChangelogRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/help': typeof HelpRoute
@@ -151,6 +157,7 @@ export interface FileRoutesByFullPath {
   '/sign-in': typeof SignInRoute
   '/sign-up': typeof SignUpRoute
   '/status': typeof StatusRoute
+  '/app/$workspaceSlug': typeof AppWorkspaceSlugRoute
   '/settings/appearance': typeof SettingsAppearanceRoute
   '/settings/billing': typeof SettingsBillingRoute
   '/settings/integrations': typeof SettingsIntegrationsRoute
@@ -162,7 +169,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/app': typeof AppRoute
+  '/app': typeof AppRouteWithChildren
   '/changelog': typeof ChangelogRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/help': typeof HelpRoute
@@ -173,6 +180,7 @@ export interface FileRoutesByTo {
   '/sign-in': typeof SignInRoute
   '/sign-up': typeof SignUpRoute
   '/status': typeof StatusRoute
+  '/app/$workspaceSlug': typeof AppWorkspaceSlugRoute
   '/settings/appearance': typeof SettingsAppearanceRoute
   '/settings/billing': typeof SettingsBillingRoute
   '/settings/integrations': typeof SettingsIntegrationsRoute
@@ -185,7 +193,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/app': typeof AppRoute
+  '/app': typeof AppRouteWithChildren
   '/changelog': typeof ChangelogRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/help': typeof HelpRoute
@@ -197,6 +205,7 @@ export interface FileRoutesById {
   '/sign-in': typeof SignInRoute
   '/sign-up': typeof SignUpRoute
   '/status': typeof StatusRoute
+  '/app/$workspaceSlug': typeof AppWorkspaceSlugRoute
   '/settings/appearance': typeof SettingsAppearanceRoute
   '/settings/billing': typeof SettingsBillingRoute
   '/settings/integrations': typeof SettingsIntegrationsRoute
@@ -222,6 +231,7 @@ export interface FileRouteTypes {
     | '/sign-in'
     | '/sign-up'
     | '/status'
+    | '/app/$workspaceSlug'
     | '/settings/appearance'
     | '/settings/billing'
     | '/settings/integrations'
@@ -244,6 +254,7 @@ export interface FileRouteTypes {
     | '/sign-in'
     | '/sign-up'
     | '/status'
+    | '/app/$workspaceSlug'
     | '/settings/appearance'
     | '/settings/billing'
     | '/settings/integrations'
@@ -267,6 +278,7 @@ export interface FileRouteTypes {
     | '/sign-in'
     | '/sign-up'
     | '/status'
+    | '/app/$workspaceSlug'
     | '/settings/appearance'
     | '/settings/billing'
     | '/settings/integrations'
@@ -279,7 +291,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  AppRoute: typeof AppRoute
+  AppRoute: typeof AppRouteWithChildren
   ChangelogRoute: typeof ChangelogRoute
   ForgotPasswordRoute: typeof ForgotPasswordRoute
   HelpRoute: typeof HelpRoute
@@ -442,8 +454,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SettingsAppearanceRouteImport
       parentRoute: typeof SettingsRoute
     }
+    '/app/$workspaceSlug': {
+      id: '/app/$workspaceSlug'
+      path: '/$workspaceSlug'
+      fullPath: '/app/$workspaceSlug'
+      preLoaderRoute: typeof AppWorkspaceSlugRouteImport
+      parentRoute: typeof AppRoute
+    }
   }
 }
+
+interface AppRouteChildren {
+  AppWorkspaceSlugRoute: typeof AppWorkspaceSlugRoute
+}
+
+const AppRouteChildren: AppRouteChildren = {
+  AppWorkspaceSlugRoute: AppWorkspaceSlugRoute,
+}
+
+const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
 
 interface SettingsRouteChildren {
   SettingsAppearanceRoute: typeof SettingsAppearanceRoute
@@ -473,7 +502,7 @@ const SettingsRouteWithChildren = SettingsRoute._addFileChildren(
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  AppRoute: AppRoute,
+  AppRoute: AppRouteWithChildren,
   ChangelogRoute: ChangelogRoute,
   ForgotPasswordRoute: ForgotPasswordRoute,
   HelpRoute: HelpRoute,

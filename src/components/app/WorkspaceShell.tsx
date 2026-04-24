@@ -35,6 +35,7 @@ import { ShortcutsModal } from "./ShortcutsModal";
 import { ChannelBrowser } from "./ChannelBrowser";
 import { channels as seedChannels, members, getMember, type Message } from "@/lib/sample-data";
 import { useStore, sendChannelMessage, markChannelRead } from "@/lib/store";
+import type { WorkspaceSummary } from "@/types/api.types";
 import { cn } from "@/lib/utils";
 
 type View =
@@ -44,7 +45,11 @@ type View =
   | { kind: "saved" }
   | { kind: "activity" };
 
-export function WorkspaceShell() {
+interface WorkspaceShellProps {
+  workspace?: WorkspaceSummary | null;
+}
+
+export function WorkspaceShell({ workspace }: WorkspaceShellProps) {
   const [view, setView] = useState<View>({ kind: "channel", channelId: "c2" });
   const [thread, setThread] = useState<Message | null>(null);
   const [details, setDetails] = useState(false);
@@ -116,10 +121,15 @@ export function WorkspaceShell() {
   return (
     <div className="flex h-screen w-full overflow-hidden bg-background text-foreground">
       <div className="hidden md:flex">
-        <GlobalSidebar activeView={activeView} onSelectView={selectGlobalView} />
+        <GlobalSidebar
+          activeView={activeView}
+          onSelectView={selectGlobalView}
+          workspace={workspace}
+        />
       </div>
       <div className="hidden md:flex">
         <WorkspaceSidebar
+          workspace={workspace}
           activeChannelId={view.kind === "channel" ? view.channelId : undefined}
           activeDmUserId={view.kind === "dm" ? view.userId : undefined}
           onSelectChannel={selectChannel}
@@ -142,8 +152,10 @@ export function WorkspaceShell() {
                 selectGlobalView(v);
                 setMobileNavOpen(false);
               }}
+              workspace={workspace}
             />
             <WorkspaceSidebar
+              workspace={workspace}
               activeChannelId={view.kind === "channel" ? view.channelId : undefined}
               activeDmUserId={view.kind === "dm" ? view.userId : undefined}
               onSelectChannel={selectChannel}

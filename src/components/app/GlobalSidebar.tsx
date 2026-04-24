@@ -1,7 +1,11 @@
 import { Link } from "@tanstack/react-router";
 import { Home, MessageSquare, Bell, Bookmark, Search, Plus, Settings } from "lucide-react";
-import { MemberAvatar } from "./MemberAvatar";
-import { me } from "@/lib/sample-data";
+import { UserAvatar } from "./UserAvatar";
+import { WorkspaceAvatar } from "./WorkspaceAvatar";
+import { getCurrentUser, useStoredCurrentUser } from "@/lib/current-user";
+import { getWorkspaceHomePath } from "@/lib/current-workspace";
+import { useCurrentUser } from "@/queries/modules/auth.queries";
+import type { WorkspaceSummary } from "@/types/api.types";
 import { cn } from "@/lib/utils";
 
 export type GlobalView = "home" | "dms" | "activity" | "saved" | "search";
@@ -9,6 +13,7 @@ export type GlobalView = "home" | "dms" | "activity" | "saved" | "search";
 interface GlobalSidebarProps {
   activeView?: GlobalView;
   onSelectView?: (view: GlobalView) => void;
+  workspace?: WorkspaceSummary | null;
 }
 
 const navItems: {
@@ -23,16 +28,31 @@ const navItems: {
   { icon: Search, label: "Search", view: "search" },
 ];
 
-export function GlobalSidebar({ activeView = "home", onSelectView }: GlobalSidebarProps) {
+export function GlobalSidebar({
+  activeView = "home",
+  onSelectView,
+  workspace,
+}: GlobalSidebarProps) {
+  const { data: currentUser } = useCurrentUser();
+  const { user: storedUser, isHydrated } = useStoredCurrentUser();
+  const resolvedUser = isHydrated ? (currentUser ?? storedUser ?? getCurrentUser()) : null;
+  const profileName =
+    resolvedUser?.displayName || resolvedUser?.fullName || resolvedUser?.email || "You";
+
   return (
     <div className="flex h-full w-[64px] shrink-0 flex-col items-center justify-between border-r border-sidebar-border bg-sidebar py-3">
       <div className="flex flex-col items-center gap-2">
         <Link
-          to="/app"
-          className="group flex h-10 w-10 items-center justify-center rounded-lg bg-foreground text-background font-bold text-sm shadow-elegant hover:scale-[1.03] transition-transform"
-          title="Acme Inc."
+          to={getWorkspaceHomePath(workspace)}
+          className="group flex h-10 w-10 items-center justify-center rounded-lg shadow-elegant hover:scale-[1.03] transition-transform"
+          title={workspace?.name || "Relay workspace"}
         >
-          A
+          <WorkspaceAvatar
+            name={workspace?.name || "Relay"}
+            avatarUrl={workspace?.avatarUrl}
+            avatarColor={workspace?.avatarColor}
+            className="h-10 w-10 rounded-lg"
+          />
         </Link>
         <button
           className="flex h-10 w-10 items-center justify-center rounded-lg border border-dashed border-sidebar-border text-muted-foreground hover:border-foreground/40 hover:text-foreground transition-colors"
@@ -72,10 +92,20 @@ export function GlobalSidebar({ activeView = "home", onSelectView }: GlobalSideb
           <Settings className="h-[18px] w-[18px]" strokeWidth={1.75} />
         </Link>
         <button
-          title="Profile"
+          title={profileName}
           className="rounded-md ring-1 ring-sidebar-border hover:ring-foreground/30 transition"
         >
-          <MemberAvatar member={me} size="md" showPresence />
+          {isHydrated ? (
+            <UserAvatar
+              name={profileName}
+              avatarUrl={resolvedUser?.avatarUrl}
+              avatarColor={resolvedUser?.avatarColor}
+              className="h-9 w-9"
+              showPresence
+            />
+          ) : (
+            <div className="h-9 w-9 rounded-md bg-sidebar-accent/60" />
+          )}
         </button>
       </div>
     </div>

@@ -64,6 +64,8 @@ export function Field({
   rightSlot,
   autoComplete,
   defaultValue,
+  value,
+  onChange,
 }: {
   label: string;
   type?: string;
@@ -72,6 +74,8 @@ export function Field({
   rightSlot?: ReactNode;
   autoComplete?: string;
   defaultValue?: string;
+  value?: string;
+  onChange?: (value: string) => void;
 }) {
   return (
     <label className="block">
@@ -84,6 +88,8 @@ export function Field({
         placeholder={placeholder}
         autoComplete={autoComplete}
         defaultValue={defaultValue}
+        value={value}
+        onChange={onChange ? (event) => onChange(event.target.value) : undefined}
         className="block h-10 w-full rounded-md border border-border bg-surface-elevated/60 px-3 text-sm text-foreground placeholder:text-muted-foreground/60 focus:border-foreground/40 focus:outline-none focus:ring-1 focus:ring-foreground/10"
       />
       {hint && <p className="mt-1.5 text-[11.5px] text-muted-foreground">{hint}</p>}
@@ -111,21 +117,44 @@ export function PrimaryButton({
   );
 }
 
-export function SocialButtons() {
+export function SocialButtons({
+  googleSlot,
+  onGoogleClick,
+  googleLoading = false,
+  googleDisabled = false,
+}: {
+  googleSlot?: ReactNode;
+  onGoogleClick?: () => void;
+  googleLoading?: boolean;
+  googleDisabled?: boolean;
+}) {
+  const buttons = [
+    {
+      label: googleLoading ? "Connecting..." : "Google",
+      icon: <GoogleIcon />,
+      onClick: onGoogleClick,
+      disabled: googleDisabled || googleLoading,
+    },
+    {
+      label: "Apple",
+      icon: <AppleIcon />,
+      disabled: true,
+    },
+  ];
+
   return (
-    <div className="grid grid-cols-2 gap-2">
-      {[
-        { l: "Google", icon: <GoogleIcon /> },
-        { l: "Apple", icon: <AppleIcon /> },
-      ].map((b) => (
+    <div className="space-y-2">
+      {googleSlot ?? (
         <button
-          key={b.l}
-          className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-border bg-surface-elevated/60 px-3 text-[13px] font-medium text-foreground transition hover:border-foreground/30"
+          type="button"
+          onClick={buttons[0].onClick}
+          disabled={buttons[0].disabled}
+          className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-border bg-surface-elevated/60 px-3 text-[13px] font-medium text-foreground transition hover:border-foreground/30 disabled:cursor-not-allowed disabled:opacity-50"
         >
-          {b.icon}
-          {b.l}
+          {buttons[0].icon}
+          {buttons[0].label}
         </button>
-      ))}
+      )}
     </div>
   );
 }

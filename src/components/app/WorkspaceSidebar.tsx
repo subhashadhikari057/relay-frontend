@@ -12,11 +12,14 @@ import {
 import { useState } from "react";
 import { ChannelRow } from "./ChannelRow";
 import { DMRow } from "./DMRow";
+import { WorkspaceAvatar } from "./WorkspaceAvatar";
 import { dms, getMember } from "@/lib/sample-data";
 import { useStore } from "@/lib/store";
+import type { WorkspaceSummary } from "@/types/api.types";
 import { cn } from "@/lib/utils";
 
 interface WorkspaceSidebarProps {
+  workspace?: WorkspaceSummary | null;
   activeChannelId?: string;
   activeDmUserId?: string;
   onSelectChannel: (id: string) => void;
@@ -28,6 +31,7 @@ interface WorkspaceSidebarProps {
 }
 
 export function WorkspaceSidebar({
+  workspace,
   activeChannelId,
   activeDmUserId,
   onSelectChannel,
@@ -45,13 +49,23 @@ export function WorkspaceSidebar({
   return (
     <div className="flex h-full w-[260px] shrink-0 flex-col border-r border-sidebar-border bg-sidebar">
       {/* Workspace header */}
-      <button className="group flex items-center justify-between px-3 py-3 border-b border-sidebar-border hover:bg-sidebar-accent/50 transition-colors">
-        <div className="flex flex-col items-start min-w-0">
-          <span className="text-sm font-semibold text-foreground truncate">Acme Inc.</span>
-          <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
-            <span className="h-1.5 w-1.5 rounded-full bg-[oklch(0.72_0.16_150)]" />
-            12 online
-          </span>
+      <button className="group flex items-center justify-between gap-3 border-b border-sidebar-border px-3 py-3 transition-colors hover:bg-sidebar-accent/50">
+        <div className="flex min-w-0 items-center gap-3">
+          <WorkspaceAvatar
+            name={workspace?.name || "Relay"}
+            avatarUrl={workspace?.avatarUrl}
+            avatarColor={workspace?.avatarColor}
+            className="h-9 w-9 rounded-md text-xs"
+          />
+          <div className="flex min-w-0 flex-col items-start">
+            <span className="truncate text-sm font-semibold text-foreground">
+              {workspace?.name || "Relay"}
+            </span>
+            <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
+              <span className="h-1.5 w-1.5 rounded-full bg-[oklch(0.72_0.16_150)]" />
+              12 online
+            </span>
+          </div>
         </div>
         <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
       </button>

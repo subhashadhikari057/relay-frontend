@@ -2,6 +2,7 @@ import { Outlet, Link, createRootRoute, HeadContent, Scripts } from "@tanstack/r
 import { Analytics } from "@vercel/analytics/react";
 import { Toaster } from "sonner";
 import { ThemeBoot } from "@/components/ThemeBoot";
+import { QueryProvider } from "@/queries/QueryProvider";
 
 import appCss from "../styles.css?url";
 
@@ -93,7 +94,7 @@ function RootShell({ children }: { children: React.ReactNode }) {
       </head>
       <body className="bg-background text-foreground antialiased">
         <ThemeBoot />
-        {children}
+        <QueryProvider>{children}</QueryProvider>
         <Analytics />
         <Toaster theme="dark" position="bottom-right" richColors closeButton />
         <Scripts />
