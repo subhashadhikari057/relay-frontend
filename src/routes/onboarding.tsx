@@ -14,8 +14,9 @@ import {
   X,
 } from "lucide-react";
 import { toast } from "sonner";
-import { hasOnboardingAccess } from "@/lib/onboarding-access";
+import { useAuthSessionState } from "@/lib/auth-session";
 import { useCompleteOnboardingMutation } from "@/queries/modules/onboarding.queries";
+import { Route as RootRoute } from "@/routes/__root";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/onboarding")({
@@ -57,6 +58,8 @@ const DEFAULT_CHANNEL_DESCRIPTION = "Default public channel for everyone in the 
 
 function Onboarding() {
   const navigate = useNavigate();
+  const initialSession = RootRoute.useLoaderData();
+  const { status } = useAuthSessionState();
   const completeOnboarding = useCompleteOnboardingMutation();
   const [step, setStep] = useState(0);
   const [workspaceName, setWorkspaceName] = useState("");
@@ -88,13 +91,26 @@ function Onboarding() {
   }, [displayName]);
 
   useEffect(() => {
-    if (!hasOnboardingAccess()) {
+    if (status === "pending") {
+      return;
+    }
+
+    if (initialSession.workspace?.slug) {
+      void navigate({
+        to: "/app/$workspaceSlug",
+        params: { workspaceSlug: initialSession.workspace.slug },
+        replace: true,
+      });
+      return;
+    }
+
+    if (status !== "authenticated") {
       void navigate({ to: "/sign-up", replace: true });
       return;
     }
 
     setCanViewOnboarding(true);
-  }, [navigate]);
+  }, [initialSession.workspace, navigate, status]);
 
   function addInvite() {
     const email = inviteInput.trim().toLowerCase();
@@ -214,8 +230,8 @@ function Onboarding() {
             </span>
             <span className="text-[15px] font-semibold tracking-tight">Relay</span>
           </Link>
-          <Link to="/app" className="text-[12.5px] text-muted-foreground hover:text-foreground">
-            Skip for now
+          <Link to="/sign-in" className="text-[12.5px] text-muted-foreground hover:text-foreground">
+            Sign in instead
           </Link>
         </header>
 

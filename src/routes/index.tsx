@@ -71,7 +71,10 @@ function Nav() {
   const status =
     initialSession.status === "authenticated" ? authState.status : initialSession.status;
   const { workspace } = useStoredCurrentWorkspace();
-  const workspaceHomePath = getWorkspaceHomePath(workspace ?? initialSession.workspace);
+  const currentWorkspace = workspace ?? initialSession.workspace;
+  const workspaceHomePath = getWorkspaceHomePath(currentWorkspace);
+  const authenticatedCtaPath = currentWorkspace ? workspaceHomePath : "/onboarding";
+  const authenticatedCtaLabel = currentWorkspace ? "Dashboard" : "Continue setup";
   const prefersDark =
     typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches;
   const isDark = theme === "dark" || (theme === "system" && prefersDark);
@@ -134,10 +137,10 @@ function Nav() {
             <div className="h-9 w-[152px] rounded-md border border-border bg-surface-elevated/60" />
           ) : status === "authenticated" ? (
             <Link
-              to={workspaceHomePath}
+              to={authenticatedCtaPath}
               className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-[13px] font-medium text-primary-foreground hover:opacity-90 transition"
             >
-              Dashboard <ArrowRight className="h-3.5 w-3.5" />
+              {authenticatedCtaLabel} <ArrowRight className="h-3.5 w-3.5" />
             </Link>
           ) : (
             <>

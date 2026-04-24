@@ -64,7 +64,7 @@ async function handleAuthSuccess(
     return;
   }
 
-  if (redirectTo === "/onboarding") {
+  if (!workspace || redirectTo === "/onboarding") {
     allowOnboardingAccess();
     if (typeof window !== "undefined") {
       window.location.assign("/onboarding");

@@ -8,6 +8,9 @@ type GooglePromptNotification = {
   isNotDisplayed?: () => boolean;
   isSkippedMoment?: () => boolean;
   isDismissedMoment?: () => boolean;
+  getNotDisplayedReason?: () => string;
+  getSkippedReason?: () => string;
+  getDismissedReason?: () => string;
 };
 
 type GoogleIdentity = {
