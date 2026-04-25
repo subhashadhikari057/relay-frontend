@@ -34,7 +34,7 @@ import { InviteModal } from "./InviteModal";
 import { ShortcutsModal } from "./ShortcutsModal";
 import { ChannelBrowser } from "./ChannelBrowser";
 import { channels as seedChannels, members, getMember, type Message } from "@/lib/sample-data";
-import { useStore, sendChannelMessage, markChannelRead } from "@/lib/store";
+import { useDensity, useStore, sendChannelMessage, markChannelRead } from "@/lib/store";
 import type { WorkspaceSummary } from "@/types/api.types";
 import { cn } from "@/lib/utils";
 
@@ -304,6 +304,8 @@ function ChannelView({
 }: ChannelViewProps) {
   const allChannels = useStore((s) => s.channels);
   const channelMessages = useStore((s) => s.channelMessages);
+  const { density } = useDensity();
+  const isCompact = density === "compact";
   const channel = useMemo(
     () => allChannels.find((c) => c.id === channelId) ?? seedChannels[0],
     [allChannels, channelId],
@@ -312,7 +314,12 @@ function ChannelView({
 
   return (
     <main className="flex min-w-0 flex-1 flex-col">
-      <header className="flex h-14 items-center gap-2 border-b border-border bg-background/80 px-3 backdrop-blur-md md:gap-3 md:px-4">
+      <header
+        className={cn(
+          "flex items-center gap-2 border-b border-border bg-background/80 px-3 backdrop-blur-md md:gap-3 md:px-4",
+          isCompact ? "h-12" : "h-14",
+        )}
+      >
         <button
           onClick={onOpenNav}
           className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-foreground/[0.06] hover:text-foreground md:hidden"
@@ -422,7 +429,12 @@ function ChannelView({
         </div>
       </header>
 
-      <div className="hidden items-center gap-2 border-b border-border bg-surface/40 px-5 py-1.5 text-[11.5px] text-muted-foreground sm:flex">
+      <div
+        className={cn(
+          "hidden items-center gap-2 border-b border-border bg-surface/40 px-5 text-[11.5px] text-muted-foreground sm:flex",
+          isCompact ? "py-1" : "py-1.5",
+        )}
+      >
         <Pin className="h-3 w-3" />
         <span className="text-foreground font-medium">2 pinned</span>
         <span>·</span>
@@ -430,7 +442,7 @@ function ChannelView({
       </div>
 
       <div className="flex-1 overflow-y-auto">
-        <div className="mx-auto max-w-[920px] py-4">
+        <div className={cn("mx-auto max-w-[920px]", isCompact ? "py-2" : "py-4")}>
           <ChannelIntro name={channel.name} />
           <DateSeparator label="Today" />
           {messages.map((m, i) => {
@@ -445,6 +457,7 @@ function ChannelView({
                 message={m}
                 groupedWithPrev={grouped}
                 onOpenThread={onOpenThread}
+                compact={isCompact}
               />
             );
           })}
@@ -454,6 +467,7 @@ function ChannelView({
       <div className="border-t border-border bg-background">
         <Composer
           placeholder={`Message #${channel.name}`}
+          compact={isCompact}
           onSend={(content) => sendChannelMessage(channelId, content)}
         />
       </div>

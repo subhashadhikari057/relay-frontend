@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { Check } from "lucide-react";
 import { SettingsHeader, SettingsSection, Toggle } from "@/components/settings/SettingsShell";
-import { useTheme } from "@/lib/store";
+import { useDensity, useTheme } from "@/lib/store";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/settings/appearance")({
@@ -11,7 +11,7 @@ export const Route = createFileRoute("/settings/appearance")({
 
 function AppearancePage() {
   const { theme, setTheme } = useTheme();
-  const [density, setDensity] = useState<"comfortable" | "compact">("comfortable");
+  const { density, setDensity } = useDensity();
   const [reduce, setReduce] = useState(false);
 
   return (

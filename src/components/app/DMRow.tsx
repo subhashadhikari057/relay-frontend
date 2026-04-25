@@ -6,15 +6,17 @@ interface DMRowProps {
   member: Member;
   active?: boolean;
   unread?: number;
+  compact?: boolean;
   onClick?: () => void;
 }
 
-export function DMRow({ member, active, unread, onClick }: DMRowProps) {
+export function DMRow({ member, active, unread, compact, onClick }: DMRowProps) {
   return (
     <button
       onClick={onClick}
       className={cn(
         "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm transition-colors",
+        compact && "py-1 text-[13px]",
         active
           ? "bg-sidebar-accent text-sidebar-accent-foreground"
           : "text-muted-foreground hover:bg-sidebar-accent/60 hover:text-foreground",

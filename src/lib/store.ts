@@ -22,6 +22,7 @@ type State = {
   savedIds: string[];
   unreadByChannel: Record<string, number>;
   theme: "light" | "dark" | "system";
+  density: "comfortable" | "compact";
 };
 
 let state: State = {
@@ -33,6 +34,7 @@ let state: State = {
   savedIds: [],
   unreadByChannel: Object.fromEntries(seedChannels.map((c) => [c.id, c.unread ?? 0])),
   theme: "dark",
+  density: "comfortable",
 };
 
 function structuredCloneSafe<T>(v: T): T {
@@ -63,6 +65,7 @@ if (typeof window !== "undefined") {
         pinnedIds: parsed.pinnedIds ?? state.pinnedIds,
         savedIds: parsed.savedIds ?? state.savedIds,
         theme: parsed.theme ?? state.theme,
+        density: parsed.density ?? state.density,
         channels: parsed.channels ?? state.channels,
       };
     }
@@ -80,6 +83,7 @@ function persist() {
         pinnedIds: state.pinnedIds,
         savedIds: state.savedIds,
         theme: state.theme,
+        density: state.density,
         channels: state.channels,
       }),
     );
@@ -94,7 +98,7 @@ export function useStore<T>(selector: (s: State) => T): T {
   useEffect(() => {
     const unsub = subscribe(() => force((n) => n + 1));
     return () => {
-      unsub;
+      unsub();
     };
   }, []);
   return selector(state);
@@ -259,6 +263,12 @@ export function setTheme(theme: State["theme"]) {
   applyTheme(theme);
 }
 
+export function setDensity(density: State["density"]) {
+  state = { ...state, density };
+  persist();
+  notify();
+}
+
 export function applyTheme(theme: State["theme"]) {
   if (typeof document === "undefined") return;
   const root = document.documentElement;
@@ -273,4 +283,10 @@ export function useTheme() {
   const theme = useStore((s) => s.theme);
   const set = useCallback((t: State["theme"]) => setTheme(t), []);
   return { theme, setTheme: set };
+}
+
+export function useDensity() {
+  const density = useStore((s) => s.density);
+  const set = useCallback((nextDensity: State["density"]) => setDensity(nextDensity), []);
+  return { density, setDensity: set };
 }

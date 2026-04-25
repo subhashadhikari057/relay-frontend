@@ -29,12 +29,13 @@ export function MessageItem({ message, groupedWithPrev, onOpenThread, compact }:
       onMouseLeave={() => setHover(false)}
       className={cn(
         "group relative flex gap-3 px-5 transition-colors hover:bg-foreground/[0.02]",
-        groupedWithPrev ? "py-0.5" : "pt-3 pb-1",
+        compact ? "gap-2 px-4" : "gap-3 px-5",
+        groupedWithPrev ? (compact ? "py-0" : "py-0.5") : compact ? "pt-2 pb-0.5" : "pt-3 pb-1",
       )}
     >
-      <div className="w-9 shrink-0">
+      <div className={cn("shrink-0", compact ? "w-8" : "w-9")}>
         {!groupedWithPrev ? (
-          <MemberAvatar member={author} size="md" />
+          <MemberAvatar member={author} size={compact ? "sm" : "md"} />
         ) : (
           <span
             className={cn(

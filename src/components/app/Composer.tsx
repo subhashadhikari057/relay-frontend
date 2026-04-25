@@ -49,9 +49,12 @@ export function Composer({ placeholder = "Message", compact, onSend }: ComposerP
           rows={2}
           placeholder={placeholder}
           aria-label={placeholder}
-          className="block w-full resize-none bg-transparent px-3.5 pt-3 pb-1 text-[14px] text-foreground placeholder:text-muted-foreground/70 focus:outline-none"
+          className={cn(
+            "block w-full resize-none bg-transparent px-3.5 text-foreground placeholder:text-muted-foreground/70 focus:outline-none",
+            compact ? "pt-2 pb-0.5 text-[13px]" : "pt-3 pb-1 text-[14px]",
+          )}
         />
-        <div className="flex items-center justify-between px-2 pb-1.5">
+        <div className={cn("flex items-center justify-between px-2", compact ? "pb-1" : "pb-1.5")}>
           <div className="flex items-center gap-0.5 text-muted-foreground">
             {[
               { Icon: Plus, label: "Attach" },

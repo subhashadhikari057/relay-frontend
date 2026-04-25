@@ -5,10 +5,11 @@ import type { Channel } from "@/lib/sample-data";
 interface ChannelRowProps {
   channel: Channel;
   active?: boolean;
+  compact?: boolean;
   onClick?: () => void;
 }
 
-export function ChannelRow({ channel, active, onClick }: ChannelRowProps) {
+export function ChannelRow({ channel, active, compact, onClick }: ChannelRowProps) {
   const Icon = channel.private ? Lock : Hash;
   const hasUnread = (channel.unread ?? 0) > 0;
   return (
@@ -16,6 +17,7 @@ export function ChannelRow({ channel, active, onClick }: ChannelRowProps) {
       onClick={onClick}
       className={cn(
         "group flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm transition-colors",
+        compact && "py-1 text-[13px]",
         active
           ? "bg-sidebar-accent text-sidebar-accent-foreground"
           : "text-muted-foreground hover:bg-sidebar-accent/60 hover:text-foreground",

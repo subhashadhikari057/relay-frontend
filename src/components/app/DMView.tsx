@@ -3,7 +3,8 @@ import { MemberAvatar } from "./MemberAvatar";
 import { MessageItem } from "./MessageItem";
 import { Composer } from "./Composer";
 import { type Member } from "@/lib/sample-data";
-import { useStore, sendDMMessage } from "@/lib/store";
+import { useDensity, useStore, sendDMMessage } from "@/lib/store";
+import { cn } from "@/lib/utils";
 
 interface DMViewProps {
   member: Member;
@@ -11,12 +12,19 @@ interface DMViewProps {
 
 export function DMView({ member }: DMViewProps) {
   const messages = useStore((s) => s.dmMessages[member.id]) ?? [];
+  const { density } = useDensity();
+  const isCompact = density === "compact";
   const presenceLabel =
     member.presence === "online" ? "Active now" : member.presence === "away" ? "Away" : "Offline";
 
   return (
     <main className="flex min-w-0 flex-1 flex-col">
-      <header className="flex h-14 items-center gap-3 border-b border-border bg-background/80 px-3 backdrop-blur-md md:px-4">
+      <header
+        className={cn(
+          "flex items-center gap-3 border-b border-border bg-background/80 px-3 backdrop-blur-md md:px-4",
+          isCompact ? "h-12" : "h-14",
+        )}
+      >
         <MemberAvatar member={member} size="sm" showPresence />
         <div className="min-w-0">
           <div className="flex items-center gap-1.5">
@@ -43,7 +51,7 @@ export function DMView({ member }: DMViewProps) {
       </header>
 
       <div className="flex-1 overflow-y-auto">
-        <div className="mx-auto max-w-[820px] py-4">
+        <div className={cn("mx-auto max-w-[820px]", isCompact ? "py-2" : "py-4")}>
           <DMIntro member={member} />
           {messages.map((m, i) => {
             const prev = messages[i - 1];
@@ -51,7 +59,9 @@ export function DMView({ member }: DMViewProps) {
               !!prev &&
               prev.authorId === m.authorId &&
               new Date(m.createdAt).getTime() - new Date(prev.createdAt).getTime() < 5 * 60 * 1000;
-            return <MessageItem key={m.id} message={m} groupedWithPrev={grouped} />;
+            return (
+              <MessageItem key={m.id} message={m} groupedWithPrev={grouped} compact={isCompact} />
+            );
           })}
         </div>
       </div>
@@ -59,6 +69,7 @@ export function DMView({ member }: DMViewProps) {
       <div className="border-t border-border bg-background">
         <Composer
           placeholder={`Message ${member.name}`}
+          compact={isCompact}
           onSend={(content) => sendDMMessage(member.id, content)}
         />
       </div>

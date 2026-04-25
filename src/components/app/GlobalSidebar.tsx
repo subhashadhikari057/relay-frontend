@@ -1,7 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { Home, MessageSquare, Bell, Bookmark, Search, Plus, Settings, LogOut } from "lucide-react";
 import { UserAvatar } from "./UserAvatar";
-import { WorkspaceAvatar } from "./WorkspaceAvatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -11,7 +10,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { getCurrentUser, useStoredCurrentUser } from "@/lib/current-user";
-import { getWorkspaceHomePath } from "@/lib/current-workspace";
+import { useDensity } from "@/lib/store";
 import { useCurrentUser, useLogoutMutation } from "@/queries/modules/auth.queries";
 import type { WorkspaceSummary } from "@/types/api.types";
 import { cn } from "@/lib/utils";
@@ -36,35 +35,39 @@ const navItems: {
   { icon: Search, label: "Search", view: "search" },
 ];
 
-export function GlobalSidebar({
-  activeView = "home",
-  onSelectView,
-  workspace,
-}: GlobalSidebarProps) {
+export function GlobalSidebar({ activeView = "home", onSelectView }: GlobalSidebarProps) {
   const { data: currentUser } = useCurrentUser();
+  const { density } = useDensity();
   const logout = useLogoutMutation();
   const { user: storedUser, isHydrated } = useStoredCurrentUser();
   const resolvedUser = isHydrated ? (currentUser ?? storedUser ?? getCurrentUser()) : null;
   const profileName =
     resolvedUser?.displayName || resolvedUser?.fullName || resolvedUser?.email || "You";
+  const isCompact = density === "compact";
 
   return (
-    <div className="flex h-full w-[64px] shrink-0 flex-col items-center justify-between border-r border-sidebar-border bg-sidebar py-3">
-      <div className="flex flex-col items-center gap-2">
+    <div
+      className={cn(
+        "flex h-full shrink-0 flex-col items-center justify-between border-r border-sidebar-border bg-sidebar",
+        isCompact ? "w-[56px] py-2" : "w-[64px] py-3",
+      )}
+    >
+      <div className={cn("flex flex-col items-center", isCompact ? "gap-1.5" : "gap-2")}>
         <Link
-          to={getWorkspaceHomePath(workspace)}
-          className="group flex h-10 w-10 items-center justify-center rounded-lg shadow-elegant hover:scale-[1.03] transition-transform"
-          title={workspace?.name || "Relay workspace"}
+          to="/"
+          className={cn(
+            "group flex items-center justify-center rounded-lg border border-sidebar-border bg-foreground text-sm font-bold text-background shadow-elegant transition-transform hover:scale-[1.03]",
+            isCompact ? "h-9 w-9" : "h-10 w-10",
+          )}
+          title="Relay home"
         >
-          <WorkspaceAvatar
-            name={workspace?.name || "Relay"}
-            avatarUrl={workspace?.avatarUrl}
-            avatarColor={workspace?.avatarColor}
-            className="h-10 w-10 rounded-lg"
-          />
+          R
         </Link>
         <button
-          className="flex h-10 w-10 items-center justify-center rounded-lg border border-dashed border-sidebar-border text-muted-foreground hover:border-foreground/40 hover:text-foreground transition-colors"
+          className={cn(
+            "flex items-center justify-center rounded-lg border border-dashed border-sidebar-border text-muted-foreground transition-colors hover:border-foreground/40 hover:text-foreground",
+            isCompact ? "h-9 w-9" : "h-10 w-10",
+          )}
           title="Add workspace"
         >
           <Plus className="h-4 w-4" />
@@ -81,21 +84,28 @@ export function GlobalSidebar({
                 title={label}
                 onClick={() => onSelectView?.(view)}
                 className={cn(
-                  "flex h-10 w-10 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-foreground",
+                  "flex items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-foreground",
+                  isCompact ? "h-9 w-9" : "h-10 w-10",
                   active && "bg-sidebar-accent text-foreground",
                 )}
               >
-                <Icon className="h-[18px] w-[18px]" strokeWidth={1.75} />
+                <Icon
+                  className={cn(isCompact ? "h-4 w-4" : "h-[18px] w-[18px]")}
+                  strokeWidth={1.75}
+                />
               </button>
             );
           })}
         </nav>
       </div>
 
-      <div className="flex flex-col items-center gap-2">
+      <div className={cn("flex flex-col items-center", isCompact ? "gap-1.5" : "gap-2")}>
         <Link
           to="/settings"
-          className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground hover:bg-sidebar-accent hover:text-foreground transition-colors"
+          className={cn(
+            "flex items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-foreground",
+            isCompact ? "h-8 w-8" : "h-9 w-9",
+          )}
           title="Settings"
         >
           <Settings className="h-[18px] w-[18px]" strokeWidth={1.75} />
@@ -112,11 +122,16 @@ export function GlobalSidebar({
                   name={profileName}
                   avatarUrl={resolvedUser?.avatarUrl}
                   avatarColor={resolvedUser?.avatarColor}
-                  className="h-9 w-9"
+                  className={cn(isCompact ? "h-8 w-8" : "h-9 w-9")}
                   showPresence
                 />
               ) : (
-                <div className="h-9 w-9 rounded-md bg-sidebar-accent/60" />
+                <div
+                  className={cn(
+                    "rounded-md bg-sidebar-accent/60",
+                    isCompact ? "h-8 w-8" : "h-9 w-9",
+                  )}
+                />
               )}
             </button>
           </DropdownMenuTrigger>

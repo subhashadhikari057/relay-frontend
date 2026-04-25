@@ -14,7 +14,7 @@ import { ChannelRow } from "./ChannelRow";
 import { DMRow } from "./DMRow";
 import { WorkspaceAvatar } from "./WorkspaceAvatar";
 import { dms, getMember } from "@/lib/sample-data";
-import { useStore } from "@/lib/store";
+import { useDensity, useStore } from "@/lib/store";
 import type { WorkspaceSummary } from "@/types/api.types";
 import { cn } from "@/lib/utils";
 
@@ -43,19 +43,31 @@ export function WorkspaceSidebar({
 }: WorkspaceSidebarProps) {
   const channels = useStore((s) => s.channels);
   const unreadByChannel = useStore((s) => s.unreadByChannel);
+  const { density } = useDensity();
+  const isCompact = density === "compact";
   const [openChannels, setOpenChannels] = useState(true);
   const [openDms, setOpenDms] = useState(true);
 
   return (
-    <div className="flex h-full w-[260px] shrink-0 flex-col border-r border-sidebar-border bg-sidebar">
+    <div
+      className={cn(
+        "flex h-full shrink-0 flex-col border-r border-sidebar-border bg-sidebar",
+        isCompact ? "w-[224px]" : "w-[260px]",
+      )}
+    >
       {/* Workspace header */}
-      <button className="group flex items-center justify-between gap-3 border-b border-sidebar-border px-3 py-3 transition-colors hover:bg-sidebar-accent/50">
-        <div className="flex min-w-0 items-center gap-3">
+      <button
+        className={cn(
+          "group flex items-center justify-between border-b border-sidebar-border px-3 transition-colors hover:bg-sidebar-accent/50",
+          isCompact ? "gap-2 py-2" : "gap-3 py-3",
+        )}
+      >
+        <div className={cn("flex min-w-0 items-center", isCompact ? "gap-2" : "gap-3")}>
           <WorkspaceAvatar
             name={workspace?.name || "Relay"}
             avatarUrl={workspace?.avatarUrl}
             avatarColor={workspace?.avatarColor}
-            className="h-9 w-9 rounded-md text-xs"
+            className={cn("rounded-md text-xs", isCompact ? "h-8 w-8" : "h-9 w-9")}
           />
           <div className="flex min-w-0 flex-col items-start">
             <span className="truncate text-sm font-semibold text-foreground">
@@ -71,7 +83,7 @@ export function WorkspaceSidebar({
       </button>
 
       {/* Quick actions */}
-      <div className="flex flex-col gap-0.5 px-2 py-2 text-sm">
+      <div className={cn("flex flex-col gap-0.5 px-2 text-sm", isCompact ? "py-1.5" : "py-2")}>
         {[
           { icon: Edit3, label: "New message", onClick: () => onSelectDm?.("u2") },
           {
@@ -84,7 +96,10 @@ export function WorkspaceSidebar({
           <button
             key={label}
             onClick={onClick}
-            className="flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-muted-foreground hover:bg-sidebar-accent/60 hover:text-foreground transition-colors"
+            className={cn(
+              "flex items-center gap-2 rounded-md px-2 text-left text-muted-foreground transition-colors hover:bg-sidebar-accent/60 hover:text-foreground",
+              isCompact ? "py-1 text-[13px]" : "py-1.5",
+            )}
           >
             <Icon className="h-3.5 w-3.5" strokeWidth={1.75} />
             <span>{label}</span>
@@ -94,7 +109,7 @@ export function WorkspaceSidebar({
 
       <div className="h-px bg-sidebar-border mx-2" />
 
-      <div className="flex-1 overflow-y-auto px-2 py-2">
+      <div className={cn("flex-1 overflow-y-auto px-2", isCompact ? "py-1.5" : "py-2")}>
         {/* Channels */}
         <Section
           label="Channels"
@@ -109,20 +124,27 @@ export function WorkspaceSidebar({
                 key={c.id}
                 channel={{ ...c, unread }}
                 active={c.id === activeChannelId}
+                compact={isCompact}
                 onClick={() => onSelectChannel(c.id)}
               />
             );
           })}
           <button
             onClick={onBrowseChannels}
-            className="mt-1 flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-sidebar-accent/60 hover:text-foreground transition-colors"
+            className={cn(
+              "mt-1 flex w-full items-center gap-2 rounded-md px-2 text-sm text-muted-foreground transition-colors hover:bg-sidebar-accent/60 hover:text-foreground",
+              isCompact ? "py-1 text-[13px]" : "py-1.5",
+            )}
           >
             <Compass className="h-3.5 w-3.5" />
             <span>Browse channels</span>
           </button>
           <button
             onClick={onCreateChannel}
-            className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-sidebar-accent/60 hover:text-foreground transition-colors"
+            className={cn(
+              "flex w-full items-center gap-2 rounded-md px-2 text-sm text-muted-foreground transition-colors hover:bg-sidebar-accent/60 hover:text-foreground",
+              isCompact ? "py-1 text-[13px]" : "py-1.5",
+            )}
           >
             <Plus className="h-3.5 w-3.5" />
             <span>Create channel</span>
@@ -142,6 +164,7 @@ export function WorkspaceSidebar({
                 key={d.id}
                 member={getMember(d.userId)}
                 active={activeDmUserId === d.userId}
+                compact={isCompact}
                 onClick={() => onSelectDm?.(d.userId)}
               />
             ))}
@@ -151,7 +174,10 @@ export function WorkspaceSidebar({
         {/* Invite */}
         <button
           onClick={onInvite}
-          className="mt-4 flex w-full items-center gap-2 rounded-md border border-dashed border-sidebar-border px-2.5 py-2 text-sm text-muted-foreground hover:border-foreground/30 hover:text-foreground transition-colors"
+          className={cn(
+            "mt-4 flex w-full items-center gap-2 rounded-md border border-dashed border-sidebar-border px-2.5 text-sm text-muted-foreground transition-colors hover:border-foreground/30 hover:text-foreground",
+            isCompact ? "py-1.5 text-[13px]" : "py-2",
+          )}
         >
           <UserPlus className="h-3.5 w-3.5" />
           <span>Invite teammates</span>
