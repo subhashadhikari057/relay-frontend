@@ -11,6 +11,20 @@ export const queryKeys = {
     members: (workspaceId: string) =>
       [...queryKeys.workspaces.all, "members", workspaceId] as const,
   },
+  dms: {
+    all: ["dms"] as const,
+    workspace: (workspaceId: string) => [...queryKeys.dms.all, "workspace", workspaceId] as const,
+    lists: (workspaceId: string) => [...queryKeys.dms.workspace(workspaceId), "list"] as const,
+    list: (workspaceId: string, filters?: unknown) =>
+      [...queryKeys.dms.lists(workspaceId), filters ?? {}] as const,
+    details: (workspaceId: string) => [...queryKeys.dms.workspace(workspaceId), "detail"] as const,
+    detail: (workspaceId: string, directConversationId: string) =>
+      [...queryKeys.dms.details(workspaceId), directConversationId] as const,
+    messages: (workspaceId: string, directConversationId: string) =>
+      [...queryKeys.dms.workspace(workspaceId), "messages", directConversationId] as const,
+    messagesList: (workspaceId: string, directConversationId: string, filters?: unknown) =>
+      [...queryKeys.dms.messages(workspaceId, directConversationId), filters ?? {}] as const,
+  },
   channels: {
     all: ["channels"] as const,
     workspace: (workspaceId: string) =>

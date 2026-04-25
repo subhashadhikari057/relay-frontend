@@ -34,12 +34,18 @@ export function UserAvatar({
   }, [avatarUrl]);
 
   const canShowImage = Boolean(avatarUrl) && !imageFailed;
+  const fallbackBg = avatarColor || undefined;
+  const hasCustomBg = Boolean(fallbackBg);
 
   return (
     <div className={cn("relative shrink-0", className)}>
       <div
-        className="flex h-full w-full items-center justify-center overflow-hidden rounded-md bg-foreground text-xs font-semibold text-background"
-        style={canShowImage ? undefined : { background: avatarColor || undefined }}
+        className={cn(
+          "flex h-full w-full items-center justify-center overflow-hidden rounded-md text-xs font-semibold",
+          canShowImage ? "bg-transparent text-foreground" : "bg-foreground/[0.08] text-foreground",
+          !canShowImage && hasCustomBg && "text-white",
+        )}
+        style={canShowImage ? undefined : { background: fallbackBg }}
         aria-label={name}
       >
         {canShowImage ? (

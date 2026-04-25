@@ -40,6 +40,8 @@ export type LoginRequest = {
 
 export type WorkspaceRole = "owner" | "admin" | "member" | "guest";
 export type ChannelType = "public" | "private";
+export type DirectConversationType = "one_to_one" | "group";
+export type MessageType = "text" | "file" | "system";
 
 export type WorkspaceSummary = {
   id: string;
@@ -71,6 +73,96 @@ export type WorkspaceMemberSummary = {
 export type WorkspaceMembersResponse = {
   count: number;
   members: WorkspaceMemberSummary[];
+};
+
+export type DirectConversationMemberSummary = {
+  userId: string;
+  email: string;
+  fullName: string;
+  displayName: string | null;
+  avatarUrl: string | null;
+  joinedAt: string;
+};
+
+export type DirectConversationSummary = {
+  id: string;
+  workspaceId: string;
+  type: DirectConversationType;
+  title: string | null;
+  createdById: string;
+  memberCount: number;
+  members: DirectConversationMemberSummary[];
+  lastMessageAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type DirectConversationListResponse = {
+  count: number;
+  nextCursor?: string;
+  conversations: DirectConversationSummary[];
+};
+
+export type ListDirectConversationsParams = {
+  limit?: number;
+  cursor?: string;
+};
+
+export type OpenDirectConversationRequest = {
+  participantUserIds: string[];
+  title?: string;
+};
+
+export type MessageAuthorSummary = {
+  id: string;
+  fullName: string;
+  displayName: string | null;
+  avatarUrl: string | null;
+};
+
+export type MessageItem = {
+  id: string;
+  workspaceId: string;
+  channelId: string | null;
+  directConversationId: string | null;
+  senderUserId: string;
+  type: MessageType;
+  content?: string | null;
+  metadata?: Record<string, unknown> | null;
+  parentMessageId?: string | null;
+  isDeleted: boolean;
+  deletedAt?: string | null;
+  editedAt?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  author: MessageAuthorSummary;
+  attachments: unknown[];
+  threadReplyCount: number;
+  canEdit: boolean;
+  canDelete: boolean;
+  reactionSummary: unknown[];
+  myReaction: string | null;
+  isPinned: boolean;
+  pinnedAt: string | null;
+  pinnedByUserId: string | null;
+};
+
+export type ListMessagesResponse = {
+  count: number;
+  nextCursor?: string;
+  messages: MessageItem[];
+};
+
+export type CreateMessageRequest = {
+  type?: MessageType;
+  content?: string;
+  metadata?: Record<string, unknown>;
+  attachments?: unknown[];
+};
+
+export type ListMessagesParams = {
+  limit?: number;
+  cursor?: string;
 };
 
 export type ChannelSummary = {

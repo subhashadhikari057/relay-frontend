@@ -33,15 +33,18 @@ import { CreateChannelModal } from "./CreateChannelModal";
 import { InviteModal } from "./InviteModal";
 import { ShortcutsModal } from "./ShortcutsModal";
 import { ChannelBrowser } from "./ChannelBrowser";
+import { NewDmModal } from "./NewDmModal";
 import { members, getMember, type Message } from "@/lib/sample-data";
 import { useDensity, useStore, sendChannelMessage, markChannelRead } from "@/lib/store";
 import { useChannelDetail, useWorkspaceChannels } from "@/queries/modules/channels.queries";
+import { useWorkspaceDms } from "@/queries/modules/dms.queries";
+import { useCurrentUser } from "@/queries/modules/auth.queries";
 import type { ChannelSummary, WorkspaceSummary } from "@/types/api.types";
 import { cn } from "@/lib/utils";
 
 type View =
   | { kind: "channel"; channelId: string }
-  | { kind: "dm"; userId: string }
+  | { kind: "dm"; directConversationId: string }
   | { kind: "search" }
   | { kind: "saved" }
   | { kind: "activity" };
@@ -51,6 +54,9 @@ interface WorkspaceShellProps {
 }
 
 export function WorkspaceShell({ workspace }: WorkspaceShellProps) {
+  const { data: currentUser } = useCurrentUser();
+  const currentUserId = currentUser?.id ?? "";
+  const currentUserAvatarColor = currentUser?.avatarColor ?? null;
   const [view, setView] = useState<View>({ kind: "channel", channelId: "pending" });
   const [thread, setThread] = useState<Message | null>(null);
   const [details, setDetails] = useState(false);
@@ -61,16 +67,21 @@ export function WorkspaceShell({ workspace }: WorkspaceShellProps) {
   const [inviteOpen, setInviteOpen] = useState(false);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [browseOpen, setBrowseOpen] = useState(false);
+  const [newDmOpen, setNewDmOpen] = useState(false);
   const channelsQuery = useWorkspaceChannels(workspace?.id);
+  const dmsQuery = useWorkspaceDms(workspace?.id);
   const channels = useMemo(
     () => channelsQuery.data?.channels ?? [],
     [channelsQuery.data?.channels],
   );
   const sidebarChannels = channels;
   const activeChannelId = view.kind === "channel" ? view.channelId : null;
+  const activeDmId = view.kind === "dm" ? view.directConversationId : null;
   const selectedChannel = activeChannelId
     ? sidebarChannels.find((channel) => channel.id === activeChannelId)
     : null;
+  const dmConversations = dmsQuery.data?.conversations ?? [];
+  const selectedDm = activeDmId ? (dmConversations.find((d) => d.id === activeDmId) ?? null) : null;
   const channelDetailQuery = useChannelDetail(
     workspace?.id,
     details ? activeChannelId : null,
@@ -118,16 +129,18 @@ export function WorkspaceShell({ workspace }: WorkspaceShellProps) {
     setMobileNavOpen(false);
     markChannelRead(id);
   };
-  const selectDm = (userId: string) => {
-    setView({ kind: "dm", userId });
+  const selectDm = (directConversationId: string) => {
+    setView({ kind: "dm", directConversationId });
     setThread(null);
     setDetails(false);
     setMobileNavOpen(false);
   };
   const selectGlobalView = (v: GlobalView) => {
     if (v === "home") jumpToDefaultChannel();
-    else if (v === "dms") setView({ kind: "dm", userId: "u2" });
-    else if (v === "activity") setView({ kind: "activity" });
+    else if (v === "dms") {
+      const firstDm = dmConversations[0];
+      if (firstDm) setView({ kind: "dm", directConversationId: firstDm.id });
+    } else if (v === "activity") setView({ kind: "activity" });
     else if (v === "search") setView({ kind: "search" });
     else if (v === "saved") setView({ kind: "saved" });
     setThread(null);
@@ -150,6 +163,7 @@ export function WorkspaceShell({ workspace }: WorkspaceShellProps) {
     onInvite: () => setInviteOpen(true),
     onOpenSaved: () => setView({ kind: "saved" }),
     onBrowseChannels: () => setBrowseOpen(true),
+    onNewDm: () => setNewDmOpen(true),
   };
 
   return (
@@ -165,10 +179,12 @@ export function WorkspaceShell({ workspace }: WorkspaceShellProps) {
         <WorkspaceSidebar
           workspace={workspace}
           channels={sidebarChannels}
+          dms={dmConversations}
+          currentUserId={currentUserId}
           channelsLoading={channelsQuery.isLoading}
           channelsError={channelsQuery.error?.message}
           activeChannelId={view.kind === "channel" ? view.channelId : undefined}
-          activeDmUserId={view.kind === "dm" ? view.userId : undefined}
+          activeDmId={view.kind === "dm" ? view.directConversationId : undefined}
           onSelectChannel={selectChannel}
           onSelectDm={selectDm}
           {...sidebarProps}
@@ -194,10 +210,12 @@ export function WorkspaceShell({ workspace }: WorkspaceShellProps) {
             <WorkspaceSidebar
               workspace={workspace}
               channels={sidebarChannels}
+              dms={dmConversations}
+              currentUserId={currentUserId}
               channelsLoading={channelsQuery.isLoading}
               channelsError={channelsQuery.error?.message}
               activeChannelId={view.kind === "channel" ? view.channelId : undefined}
-              activeDmUserId={view.kind === "dm" ? view.userId : undefined}
+              activeDmId={view.kind === "dm" ? view.directConversationId : undefined}
               onSelectChannel={selectChannel}
               onSelectDm={selectDm}
               {...sidebarProps}
@@ -251,7 +269,14 @@ export function WorkspaceShell({ workspace }: WorkspaceShellProps) {
               >
                 <Menu className="h-4 w-4" />
               </button>
-              <DMView member={getMember(view.userId)} />
+              {workspace?.id && selectedDm && currentUserId && (
+                <DMView
+                  workspaceId={workspace.id}
+                  conversation={selectedDm}
+                  currentUserId={currentUserId}
+                  currentUserAvatarColor={currentUserAvatarColor}
+                />
+              )}
             </div>
           )}
 
@@ -310,6 +335,15 @@ export function WorkspaceShell({ workspace }: WorkspaceShellProps) {
         onClose={() => setPaletteOpen(false)}
         onJumpChannel={selectChannel}
       />
+      {workspace?.id && currentUserId && (
+        <NewDmModal
+          open={newDmOpen}
+          workspaceId={workspace.id}
+          currentUserId={currentUserId}
+          onClose={() => setNewDmOpen(false)}
+          onOpenConversation={(directConversationId) => selectDm(directConversationId)}
+        />
+      )}
       <CreateChannelModal
         open={createChannelOpen}
         workspaceId={workspace?.id}

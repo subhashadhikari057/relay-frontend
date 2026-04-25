@@ -13,20 +13,26 @@ import { useState } from "react";
 import { ChannelRow } from "./ChannelRow";
 import { DMRow } from "./DMRow";
 import { WorkspaceAvatar } from "./WorkspaceAvatar";
-import { dms, getMember } from "@/lib/sample-data";
 import { useDensity } from "@/lib/store";
-import type { ChannelSummary, WorkspaceSummary } from "@/types/api.types";
+import type {
+  ChannelSummary,
+  DirectConversationSummary,
+  WorkspaceSummary,
+} from "@/types/api.types";
 import { cn } from "@/lib/utils";
 
 interface WorkspaceSidebarProps {
   workspace?: WorkspaceSummary | null;
   channels: ChannelSummary[];
+  dms: DirectConversationSummary[];
+  currentUserId: string;
   channelsLoading?: boolean;
   channelsError?: string;
   activeChannelId?: string;
-  activeDmUserId?: string;
+  activeDmId?: string;
   onSelectChannel: (id: string) => void;
-  onSelectDm?: (userId: string) => void;
+  onSelectDm?: (directConversationId: string) => void;
+  onNewDm?: () => void;
   onCreateChannel?: () => void;
   onInvite?: () => void;
   onOpenSaved?: () => void;
@@ -36,12 +42,15 @@ interface WorkspaceSidebarProps {
 export function WorkspaceSidebar({
   workspace,
   channels,
+  dms,
+  currentUserId,
   channelsLoading,
   channelsError,
   activeChannelId,
-  activeDmUserId,
+  activeDmId,
   onSelectChannel,
   onSelectDm,
+  onNewDm,
   onCreateChannel,
   onInvite,
   onOpenSaved,
@@ -89,7 +98,7 @@ export function WorkspaceSidebar({
       {/* Quick actions */}
       <div className={cn("flex flex-col gap-0.5 px-2 text-sm", isCompact ? "py-1.5" : "py-2")}>
         {[
-          { icon: Edit3, label: "New message", onClick: () => onSelectDm?.("u2") },
+          { icon: Edit3, label: "New message", onClick: onNewDm },
           {
             icon: AtSign,
             label: "Mentions & reactions",
@@ -166,15 +175,16 @@ export function WorkspaceSidebar({
             label="Direct messages"
             open={openDms}
             onToggle={() => setOpenDms((v) => !v)}
-            action={{ icon: Plus, label: "New DM", onClick: () => onSelectDm?.("u2") }}
+            action={{ icon: Plus, label: "New DM", onClick: onNewDm }}
           >
-            {dms.map((d) => (
+            {dms.map((conversation) => (
               <DMRow
-                key={d.id}
-                member={getMember(d.userId)}
-                active={activeDmUserId === d.userId}
+                key={conversation.id}
+                conversation={conversation}
+                currentUserId={currentUserId}
+                active={activeDmId === conversation.id}
                 compact={isCompact}
-                onClick={() => onSelectDm?.(d.userId)}
+                onClick={() => onSelectDm?.(conversation.id)}
               />
             ))}
           </Section>

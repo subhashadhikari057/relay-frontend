@@ -20,6 +20,16 @@ export const endpoints = {
     bySlug: (workspaceSlug: string) => `/api/mobile/workspaces/slug/${workspaceSlug}`,
     members: (workspaceId: string) => `/api/mobile/workspaces/${workspaceId}/members`,
   },
+  dms: {
+    list: (workspaceId: string) => `/api/mobile/workspaces/${workspaceId}/dms`,
+    open: (workspaceId: string) => `/api/mobile/workspaces/${workspaceId}/dms`,
+    byId: (workspaceId: string, directConversationId: string) =>
+      `/api/mobile/workspaces/${workspaceId}/dms/${directConversationId}`,
+    messages: (workspaceId: string, directConversationId: string) =>
+      `/api/mobile/workspaces/${workspaceId}/dms/${directConversationId}/messages`,
+    markRead: (workspaceId: string, directConversationId: string) =>
+      `/api/mobile/workspaces/${workspaceId}/dms/${directConversationId}/messages/read`,
+  },
   channels: {
     list: (workspaceId: string) => `/api/mobile/workspaces/${workspaceId}/channels`,
     create: (workspaceId: string) => `/api/mobile/workspaces/${workspaceId}/channels`,
