@@ -7,6 +7,7 @@ export type InitialAuthSession = {
   accessToken: string | null;
   user: AuthUser | null;
   workspace: WorkspaceSummary | null;
+  requiresOnboarding: boolean;
 };
 
 const REFRESH_COOKIE_NAME = "relay_refresh_token";
@@ -18,6 +19,7 @@ const unauthenticatedSession = {
   accessToken: null,
   user: null,
   workspace: null,
+  requiresOnboarding: false,
 } satisfies InitialAuthSession;
 
 type CachedSession = {
@@ -67,6 +69,7 @@ async function resolveInitialAuthSession(cookie: string): Promise<InitialAuthSes
     accessToken: auth.accessToken,
     user: auth.user,
     workspace,
+    requiresOnboarding: auth.requiresOnboarding,
   } satisfies InitialAuthSession;
 }
 

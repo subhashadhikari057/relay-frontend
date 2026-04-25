@@ -1,6 +1,6 @@
-import { Link, Outlet, useLocation } from "@tanstack/react-router";
-import { ArrowLeft } from "lucide-react";
+import { Outlet } from "@tanstack/react-router";
 import type { ReactNode } from "react";
+import { PublicNav } from "@/components/PublicNav";
 
 interface AuthShellProps {
   title: string;
@@ -11,25 +11,12 @@ interface AuthShellProps {
 
 export function AuthShell({ title, subtitle, children, footer }: AuthShellProps) {
   return (
-    <div className="relative min-h-screen overflow-hidden bg-background text-foreground">
-      <div className="absolute inset-0 bg-grid opacity-30 [mask-image:radial-gradient(60%_50%_at_50%_30%,black,transparent)]" />
+    <div className="relative min-h-screen overflow-x-hidden bg-background text-foreground">
+      <div className="pointer-events-none absolute inset-0 bg-grid opacity-30 [mask-image:radial-gradient(60%_50%_at_50%_30%,black,transparent)]" />
       <div className="absolute inset-x-0 top-0 h-[600px] bg-hero-glow" />
 
       <div className="relative flex min-h-screen flex-col">
-        <header className="flex items-center justify-between px-6 py-5">
-          <Link to="/" className="flex items-center gap-2">
-            <span className="flex h-7 w-7 items-center justify-center rounded-md bg-foreground text-background font-bold text-sm">
-              R
-            </span>
-            <span className="text-[15px] font-semibold tracking-tight">Relay</span>
-          </Link>
-          <Link
-            to="/"
-            className="inline-flex items-center gap-1.5 text-[12.5px] text-muted-foreground hover:text-foreground transition"
-          >
-            <ArrowLeft className="h-3.5 w-3.5" /> Back to site
-          </Link>
-        </header>
+        <PublicNav />
 
         <main className="flex flex-1 items-start justify-center px-4 pt-8 pb-16 sm:items-center sm:pt-0">
           <div className="w-full max-w-[400px]">

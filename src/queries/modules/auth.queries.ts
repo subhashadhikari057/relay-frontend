@@ -2,8 +2,9 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { authModule } from "@/api/modules/auth.module";
 import { workspacesModule } from "@/api/modules/workspaces.module";
-import { getCurrentUser, rememberCurrentUser } from "@/lib/current-user";
-import { rememberCurrentWorkspace } from "@/lib/current-workspace";
+import { setAuthSessionState } from "@/lib/auth-session";
+import { clearCurrentUser, getCurrentUser, rememberCurrentUser } from "@/lib/current-user";
+import { clearCurrentWorkspace, rememberCurrentWorkspace } from "@/lib/current-workspace";
 import { allowOnboardingAccess } from "@/lib/onboarding-access";
 import { queryKeys } from "@/queries/keys";
 import type { ApiError } from "@/api/client";
@@ -64,7 +65,7 @@ async function handleAuthSuccess(
     return;
   }
 
-  if (!workspace || redirectTo === "/onboarding") {
+  if (data.requiresOnboarding || redirectTo === "/onboarding") {
     allowOnboardingAccess();
     if (typeof window !== "undefined") {
       window.location.assign("/onboarding");
@@ -124,5 +125,28 @@ export function useCurrentUser() {
     initialData: () => queryClient.getQueryData<AuthUser>(queryKeys.auth.me()) ?? getCurrentUser(),
     staleTime: Number.POSITIVE_INFINITY,
     gcTime: Number.POSITIVE_INFINITY,
+  });
+}
+
+export function useLogoutMutation() {
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+
+  return useMutation<void, ApiError>({
+    mutationFn: () => authModule.logout(),
+    onSettled: () => {
+      authModule.rememberAccessToken(null);
+      clearCurrentUser();
+      clearCurrentWorkspace();
+      queryClient.clear();
+      setAuthSessionState({ status: "unauthenticated" });
+
+      if (typeof window !== "undefined") {
+        window.location.assign("/sign-in");
+        return;
+      }
+
+      void navigate({ to: "/sign-in", replace: true });
+    },
   });
 }

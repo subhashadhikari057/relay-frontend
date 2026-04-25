@@ -138,8 +138,7 @@ function SignIn() {
         )}
         <div className="pt-2">
           <PrimaryButton type="submit">
-            {login.isPending ? "Signing in..." : "Sign in"}{" "}
-            <ArrowRight className="h-3.5 w-3.5" />
+            {login.isPending ? "Signing in..." : "Sign in"} <ArrowRight className="h-3.5 w-3.5" />
           </PrimaryButton>
         </div>
       </form>

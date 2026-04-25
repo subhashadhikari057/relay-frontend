@@ -95,7 +95,7 @@ function Onboarding() {
       return;
     }
 
-    if (initialSession.workspace?.slug) {
+    if (!initialSession.requiresOnboarding && initialSession.workspace?.slug) {
       void navigate({
         to: "/app/$workspaceSlug",
         params: { workspaceSlug: initialSession.workspace.slug },
@@ -110,7 +110,7 @@ function Onboarding() {
     }
 
     setCanViewOnboarding(true);
-  }, [initialSession.workspace, navigate, status]);
+  }, [initialSession.requiresOnboarding, initialSession.workspace, navigate, status]);
 
   function addInvite() {
     const email = inviteInput.trim().toLowerCase();

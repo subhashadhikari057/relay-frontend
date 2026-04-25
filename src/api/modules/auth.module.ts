@@ -27,6 +27,10 @@ async function session(): Promise<AuthTokenResponse> {
   return http.post<AuthTokenResponse>(endpoints.auth.session);
 }
 
+async function logout(): Promise<void> {
+  await http.post<void>(endpoints.auth.logout);
+}
+
 function rememberAccessToken(token: string | null) {
   setAccessToken(token);
 }
@@ -37,5 +41,6 @@ export const authModule = {
   loginWithGoogle,
   refresh,
   session,
+  logout,
   rememberAccessToken,
 };

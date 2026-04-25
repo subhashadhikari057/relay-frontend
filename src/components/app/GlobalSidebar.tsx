@@ -1,10 +1,18 @@
 import { Link } from "@tanstack/react-router";
-import { Home, MessageSquare, Bell, Bookmark, Search, Plus, Settings } from "lucide-react";
+import { Home, MessageSquare, Bell, Bookmark, Search, Plus, Settings, LogOut } from "lucide-react";
 import { UserAvatar } from "./UserAvatar";
 import { WorkspaceAvatar } from "./WorkspaceAvatar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { getCurrentUser, useStoredCurrentUser } from "@/lib/current-user";
 import { getWorkspaceHomePath } from "@/lib/current-workspace";
-import { useCurrentUser } from "@/queries/modules/auth.queries";
+import { useCurrentUser, useLogoutMutation } from "@/queries/modules/auth.queries";
 import type { WorkspaceSummary } from "@/types/api.types";
 import { cn } from "@/lib/utils";
 
@@ -34,6 +42,7 @@ export function GlobalSidebar({
   workspace,
 }: GlobalSidebarProps) {
   const { data: currentUser } = useCurrentUser();
+  const logout = useLogoutMutation();
   const { user: storedUser, isHydrated } = useStoredCurrentUser();
   const resolvedUser = isHydrated ? (currentUser ?? storedUser ?? getCurrentUser()) : null;
   const profileName =
@@ -91,22 +100,57 @@ export function GlobalSidebar({
         >
           <Settings className="h-[18px] w-[18px]" strokeWidth={1.75} />
         </Link>
-        <button
-          title={profileName}
-          className="rounded-md ring-1 ring-sidebar-border hover:ring-foreground/30 transition"
-        >
-          {isHydrated ? (
-            <UserAvatar
-              name={profileName}
-              avatarUrl={resolvedUser?.avatarUrl}
-              avatarColor={resolvedUser?.avatarColor}
-              className="h-9 w-9"
-              showPresence
-            />
-          ) : (
-            <div className="h-9 w-9 rounded-md bg-sidebar-accent/60" />
-          )}
-        </button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
+              type="button"
+              title={profileName}
+              className="rounded-md ring-1 ring-sidebar-border transition hover:ring-foreground/30"
+            >
+              {isHydrated ? (
+                <UserAvatar
+                  name={profileName}
+                  avatarUrl={resolvedUser?.avatarUrl}
+                  avatarColor={resolvedUser?.avatarColor}
+                  className="h-9 w-9"
+                  showPresence
+                />
+              ) : (
+                <div className="h-9 w-9 rounded-md bg-sidebar-accent/60" />
+              )}
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent
+            side="right"
+            align="end"
+            sideOffset={10}
+            className="w-60 border-sidebar-border bg-sidebar text-foreground"
+          >
+            <DropdownMenuLabel className="min-w-0">
+              <div className="truncate text-sm font-medium">{profileName}</div>
+              {resolvedUser?.email && (
+                <div className="truncate text-xs font-normal text-muted-foreground">
+                  {resolvedUser.email}
+                </div>
+              )}
+            </DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem asChild>
+              <Link to="/settings/profile" className="cursor-pointer">
+                Profile settings
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              className="cursor-pointer text-destructive focus:text-destructive"
+              disabled={logout.isPending}
+              onClick={() => logout.mutate()}
+            >
+              <LogOut className="mr-2 h-4 w-4" />
+              {logout.isPending ? "Logging out..." : "Log out"}
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </div>
   );

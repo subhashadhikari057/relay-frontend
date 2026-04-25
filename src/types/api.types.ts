@@ -19,6 +19,7 @@ export type AuthTokenResponse = {
   user: AuthUser;
   activeWorkspaceId?: string | null;
   activeWorkspace?: WorkspaceSummary | null;
+  requiresOnboarding: boolean;
 };
 
 export type GoogleLoginRequest = {
