@@ -40,5 +40,9 @@ export const queryKeys = {
       [...queryKeys.channels.workspace(workspaceId), "members", channelId] as const,
     membersList: (workspaceId: string, channelId: string, filters?: unknown) =>
       [...queryKeys.channels.members(workspaceId, channelId), filters ?? {}] as const,
+    messages: (workspaceId: string, channelId: string) =>
+      [...queryKeys.channels.workspace(workspaceId), "messages", channelId] as const,
+    messagesList: (workspaceId: string, channelId: string, filters?: unknown) =>
+      [...queryKeys.channels.messages(workspaceId, channelId), filters ?? {}] as const,
   },
 } as const;

@@ -8,8 +8,6 @@ import {
   Search,
   HelpCircle,
   PanelRightOpen,
-  PanelRightClose,
-  Pin,
   Sparkles,
   Menu,
   X,
@@ -19,10 +17,7 @@ import {
 import { Link } from "@tanstack/react-router";
 import { GlobalSidebar, type GlobalView } from "./GlobalSidebar";
 import { WorkspaceSidebar } from "./WorkspaceSidebar";
-import { MessageItem } from "./MessageItem";
 import { Composer } from "./Composer";
-import { ThreadPanel } from "./ThreadPanel";
-import { MemberAvatar } from "./MemberAvatar";
 import { CommandPalette } from "./CommandPalette";
 import { SearchPanel } from "./SearchPanel";
 import { NotificationsPanel } from "./NotificationsPanel";
@@ -34,11 +29,15 @@ import { InviteModal } from "./InviteModal";
 import { ShortcutsModal } from "./ShortcutsModal";
 import { ChannelBrowser } from "./ChannelBrowser";
 import { NewDmModal } from "./NewDmModal";
-import { members, getMember, type Message } from "@/lib/sample-data";
-import { useDensity, useStore, sendChannelMessage, markChannelRead } from "@/lib/store";
+import { useDensity, markChannelRead } from "@/lib/store";
 import { useChannelDetail, useWorkspaceChannels } from "@/queries/modules/channels.queries";
 import { useWorkspaceDms } from "@/queries/modules/dms.queries";
 import { useCurrentUser } from "@/queries/modules/auth.queries";
+import {
+  useChannelMessages,
+  useCreateChannelMessageMutation,
+} from "@/queries/modules/channel-messages.queries";
+import { UserAvatar } from "./UserAvatar";
 import type { ChannelSummary, WorkspaceSummary } from "@/types/api.types";
 import { cn } from "@/lib/utils";
 
@@ -58,7 +57,6 @@ export function WorkspaceShell({ workspace }: WorkspaceShellProps) {
   const currentUserId = currentUser?.id ?? "";
   const currentUserAvatarColor = currentUser?.avatarColor ?? null;
   const [view, setView] = useState<View>({ kind: "channel", channelId: "pending" });
-  const [thread, setThread] = useState<Message | null>(null);
   const [details, setDetails] = useState(false);
   const [detailsTab, setDetailsTab] = useState<"about" | "members" | "pinned" | "files">("about");
   const [paletteOpen, setPaletteOpen] = useState(false);
@@ -123,7 +121,6 @@ export function WorkspaceShell({ workspace }: WorkspaceShellProps) {
 
   const selectChannel = (id: string) => {
     setView({ kind: "channel", channelId: id });
-    setThread(null);
     setDetails(false);
     setDetailsTab("about");
     setMobileNavOpen(false);
@@ -131,7 +128,6 @@ export function WorkspaceShell({ workspace }: WorkspaceShellProps) {
   };
   const selectDm = (directConversationId: string) => {
     setView({ kind: "dm", directConversationId });
-    setThread(null);
     setDetails(false);
     setMobileNavOpen(false);
   };
@@ -143,7 +139,6 @@ export function WorkspaceShell({ workspace }: WorkspaceShellProps) {
     } else if (v === "activity") setView({ kind: "activity" });
     else if (v === "search") setView({ kind: "search" });
     else if (v === "saved") setView({ kind: "saved" });
-    setThread(null);
     setDetails(false);
   };
 
@@ -231,7 +226,7 @@ export function WorkspaceShell({ workspace }: WorkspaceShellProps) {
       )}
 
       <div className="flex min-w-0 flex-1">
-        <div className={cn("flex min-w-0 flex-1", thread || details ? "hidden lg:flex" : "")}>
+        <div className={cn("flex min-w-0 flex-1", details ? "hidden lg:flex" : "")}>
           {view.kind === "search" && (
             <div className="flex min-w-0 flex-1 flex-col">
               <MobileTopBar onOpenNav={() => setMobileNavOpen(true)} title="Search" />
@@ -282,23 +277,19 @@ export function WorkspaceShell({ workspace }: WorkspaceShellProps) {
 
           {view.kind === "channel" && (
             <ChannelView
+              workspaceId={workspace?.id ?? null}
               channelId={view.channelId}
               channels={sidebarChannels}
-              thread={thread}
+              currentUserId={currentUserId}
+              currentUserAvatarColor={currentUserAvatarColor}
               details={details}
-              onOpenThread={(m) => {
-                setThread(m);
-                setDetails(false);
-              }}
               onToggleDetails={() => {
                 setDetails((d) => !d);
                 setDetailsTab("about");
-                setThread(null);
               }}
               onAddMembers={() => {
                 setDetails(true);
                 setDetailsTab("members");
-                setThread(null);
               }}
               onOpenSearch={() => setView({ kind: "search" })}
               onOpenNav={() => setMobileNavOpen(true)}
@@ -308,12 +299,6 @@ export function WorkspaceShell({ workspace }: WorkspaceShellProps) {
             />
           )}
         </div>
-
-        {thread && (
-          <div className="w-full shrink-0 lg:w-[420px]">
-            <ThreadPanel message={thread} onClose={() => setThread(null)} />
-          </div>
-        )}
 
         {details && view.kind === "channel" && (
           <div className="w-full shrink-0 lg:w-[360px]">
@@ -378,11 +363,12 @@ function MobileTopBar({ onOpenNav, title }: { onOpenNav: () => void; title: stri
 }
 
 interface ChannelViewProps {
+  workspaceId?: string | null;
   channelId: string;
   channels: ChannelSummary[];
-  thread: Message | null;
+  currentUserId: string;
+  currentUserAvatarColor: string | null;
   details: boolean;
-  onOpenThread: (m: Message) => void;
   onToggleDetails: () => void;
   onAddMembers: () => void;
   onOpenSearch: () => void;
@@ -393,11 +379,12 @@ interface ChannelViewProps {
 }
 
 function ChannelView({
+  workspaceId,
   channelId,
   channels,
-  thread,
+  currentUserId,
+  currentUserAvatarColor,
   details,
-  onOpenThread,
   onToggleDetails,
   onAddMembers,
   onOpenSearch,
@@ -406,15 +393,17 @@ function ChannelView({
   onOpenActivity,
   onOpenShortcuts,
 }: ChannelViewProps) {
-  const channelMessages = useStore((s) => s.channelMessages);
   const { density } = useDensity();
   const isCompact = density === "compact";
   const channel = useMemo(
     () => channels.find((item) => item.id === channelId) ?? channels[0],
     [channels, channelId],
   );
-  const messages = channelMessages[channelId] ?? [];
-  const threadTarget = messages.find((m) => m.replies) ?? messages[0] ?? null;
+  const channelMessagesQuery = useChannelMessages(workspaceId, channelId);
+  const createChannelMessageMutation = useCreateChannelMessageMutation();
+  const messages = channelMessagesQuery.data?.messages ?? [];
+  const timeline = [...messages].reverse(); // API returns newest-first
+  const [hoveredMessageId, setHoveredMessageId] = useState<string | null>(null);
 
   if (!channel) {
     return (
@@ -483,17 +472,18 @@ function ChannelView({
             <Search className="h-4 w-4" />
           </button>
 
-          <div className="ml-1 hidden -space-x-1.5 md:flex">
-            {members.slice(0, 4).map((m) => (
-              <div key={m.id} className="ring-2 ring-background rounded-md">
-                <MemberAvatar member={m} size="sm" />
-              </div>
-            ))}
-            <button className="flex h-7 items-center gap-1 rounded-md border border-border bg-surface-elevated px-2 text-[11px] text-muted-foreground hover:text-foreground ml-1">
-              <Users className="h-3 w-3" />
-              {members.length}
-            </button>
-          </div>
+          {typeof channel.memberCount === "number" && (
+            <div className="ml-1 hidden md:flex">
+              <button
+                onClick={onAddMembers}
+                className="flex h-8 items-center gap-1.5 rounded-md border border-border bg-surface-elevated/60 px-2.5 text-[11px] text-muted-foreground hover:border-foreground/30 hover:text-foreground"
+                title="Members"
+              >
+                <Users className="h-3.5 w-3.5" />
+                {channel.memberCount}
+              </button>
+            </div>
+          )}
 
           <button
             onClick={onOpenActivity}
@@ -529,37 +519,16 @@ function ChannelView({
           </button>
 
           <button
-            onClick={() => {
-              if (!threadTarget) return;
-              onOpenThread(threadTarget);
-            }}
-            disabled={!threadTarget}
+            disabled
             className={cn(
               "flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-foreground/[0.06] hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40",
-              thread && "bg-foreground/[0.06] text-foreground",
             )}
             title="Toggle thread"
           >
-            {thread ? (
-              <PanelRightClose className="h-4 w-4" />
-            ) : (
-              <PanelRightOpen className="h-4 w-4" />
-            )}
+            <PanelRightOpen className="h-4 w-4" />
           </button>
         </div>
       </header>
-
-      <div
-        className={cn(
-          "hidden items-center gap-2 border-b border-border bg-surface/40 px-5 text-[11.5px] text-muted-foreground sm:flex",
-          isCompact ? "py-1" : "py-1.5",
-        )}
-      >
-        <Pin className="h-3 w-3" />
-        <span className="text-foreground font-medium">2 pinned</span>
-        <span>·</span>
-        <span className="truncate">Q2 roadmap doc — read before Friday's planning sync</span>
-      </div>
 
       <div className="flex-1 overflow-y-auto">
         <div className={cn("mx-auto max-w-[920px]", isCompact ? "py-2" : "py-4")}>
@@ -569,20 +538,30 @@ function ChannelView({
             description={channel.description}
             onAddMembers={onAddMembers}
           />
-          <DateSeparator label="Today" />
-          {messages.map((m, i) => {
-            const prev = messages[i - 1];
+          {channelMessagesQuery.isLoading && (
+            <div className="px-5 py-6 text-sm text-muted-foreground">Loading messages...</div>
+          )}
+          {channelMessagesQuery.isError && (
+            <div className="px-5 py-6 text-sm text-destructive">
+              {channelMessagesQuery.error.message || "Could not load messages."}
+            </div>
+          )}
+          {timeline.map((m, i) => {
+            const prev = timeline[i - 1];
             const grouped =
               !!prev &&
-              prev.authorId === m.authorId &&
+              prev.senderUserId === m.senderUserId &&
               new Date(m.createdAt).getTime() - new Date(prev.createdAt).getTime() < 5 * 60 * 1000;
             return (
-              <MessageItem
+              <ChannelMessageItem
                 key={m.id}
                 message={m}
                 groupedWithPrev={grouped}
-                onOpenThread={onOpenThread}
                 compact={isCompact}
+                isHovered={hoveredMessageId === m.id}
+                onHoverChange={(hovered) => setHoveredMessageId(hovered ? m.id : null)}
+                currentUserId={currentUserId}
+                currentUserAvatarColor={currentUserAvatarColor}
               />
             );
           })}
@@ -593,10 +572,123 @@ function ChannelView({
         <Composer
           placeholder={`Message #${channel.name}`}
           compact={isCompact}
-          onSend={(content) => sendChannelMessage(channelId, content)}
+          onSend={(content) => {
+            const next = content.trim();
+            if (!workspaceId) return;
+            if (!next) return;
+            if (createChannelMessageMutation.isPending) return;
+            createChannelMessageMutation.mutate({
+              workspaceId,
+              channelId,
+              payload: { content: next, type: "text" },
+            });
+          }}
         />
       </div>
     </main>
+  );
+}
+
+function isSameDay(a: Date, b: Date) {
+  return (
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate()
+  );
+}
+
+function formatMessageTimestamp(ts: string, variant: "header" | "grouped") {
+  const d = new Date(ts);
+  const now = new Date();
+  const time = d.toLocaleTimeString(undefined, {
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  });
+
+  if (variant === "grouped") return time;
+  if (isSameDay(d, now)) return time;
+  const date = d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+  return `${date}, ${time}`;
+}
+
+function colorFromSeed(seed: string) {
+  let h = 0;
+  for (let i = 0; i < seed.length; i += 1) {
+    h = (h * 31 + seed.charCodeAt(i)) % 360;
+  }
+  return `hsl(${h} 65% 45%)`;
+}
+
+function ChannelMessageItem({
+  message,
+  groupedWithPrev,
+  compact,
+  isHovered,
+  onHoverChange,
+  currentUserId,
+  currentUserAvatarColor,
+}: {
+  message: import("@/types/api.types").MessageItem;
+  groupedWithPrev?: boolean;
+  compact?: boolean;
+  isHovered: boolean;
+  onHoverChange: (hovered: boolean) => void;
+  currentUserId: string;
+  currentUserAvatarColor: string | null;
+}) {
+  const authorName = message.author.displayName?.trim() || message.author.fullName;
+  const isCurrentUser = message.senderUserId === currentUserId;
+  const fallbackColor = isCurrentUser
+    ? currentUserAvatarColor || colorFromSeed(message.author.id)
+    : colorFromSeed(message.author.id);
+
+  return (
+    <div
+      onMouseEnter={() => onHoverChange(true)}
+      onMouseLeave={() => onHoverChange(false)}
+      className={cn(
+        "group relative flex gap-3 px-5 transition-colors hover:bg-foreground/[0.02]",
+        compact ? "gap-2 px-4" : "gap-3 px-5",
+        groupedWithPrev ? (compact ? "py-0" : "py-0.5") : compact ? "pt-2 pb-0.5" : "pt-3 pb-1",
+      )}
+    >
+      <div className={cn("shrink-0", compact ? "w-8" : "w-9")}>
+        {!groupedWithPrev ? (
+          <UserAvatar
+            name={authorName}
+            avatarUrl={message.author.avatarUrl}
+            avatarColor={message.author.avatarUrl ? null : fallbackColor}
+            className={cn("rounded-md", compact ? "h-7 w-7" : "h-9 w-9")}
+          />
+        ) : (
+          <span
+            className={cn(
+              "mt-1 block whitespace-nowrap text-right pr-1 text-[10px] leading-none tabular-nums text-muted-foreground/0 transition-opacity",
+              isHovered && "text-muted-foreground/70",
+            )}
+          >
+            {formatMessageTimestamp(message.createdAt, "grouped")}
+          </span>
+        )}
+      </div>
+
+      <div className="min-w-0 flex-1">
+        {!groupedWithPrev && (
+          <div className="flex items-baseline gap-2">
+            <span className="text-sm font-semibold text-foreground">{authorName}</span>
+            <span className="text-[11px] text-muted-foreground">
+              {formatMessageTimestamp(message.createdAt, "header")}
+            </span>
+          </div>
+        )}
+        <div
+          className={cn("text-[14px] leading-relaxed text-foreground/90", compact && "text-[13px]")}
+        >
+          {message.content ?? ""}
+        </div>
+      </div>
+    </div>
   );
 }
 

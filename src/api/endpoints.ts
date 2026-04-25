@@ -39,5 +39,7 @@ export const endpoints = {
       `/api/mobile/workspaces/${workspaceId}/channels/${channelId}/members`,
     join: (workspaceId: string, channelId: string) =>
       `/api/mobile/workspaces/${workspaceId}/channels/${channelId}/join`,
+    messages: (workspaceId: string, channelId: string) =>
+      `/api/mobile/workspaces/${workspaceId}/channels/${channelId}/messages`,
   },
 } as const;
