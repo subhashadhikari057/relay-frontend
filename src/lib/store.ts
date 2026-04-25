@@ -1,12 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
-import {
-  messagesByChannel as seedChannel,
-  messagesByDM as seedDM,
-  threadReplies as seedThreads,
-  channels as seedChannels,
-  type Message,
-  type Channel,
-} from "./sample-data";
+import { messagesByDM as seedDM, threadReplies as seedThreads, type Message } from "./sample-data";
 
 /**
  * Lightweight global store backed by useSyncExternalStore-style subscription.
@@ -14,7 +7,6 @@ import {
  */
 
 type State = {
-  channels: Channel[];
   channelMessages: Record<string, Message[]>;
   dmMessages: Record<string, Message[]>;
   threads: Record<string, Message[]>;
@@ -26,13 +18,12 @@ type State = {
 };
 
 let state: State = {
-  channels: [...seedChannels],
-  channelMessages: structuredCloneSafe(seedChannel),
+  channelMessages: {},
   dmMessages: structuredCloneSafe(seedDM),
   threads: structuredCloneSafe(seedThreads),
   pinnedIds: ["m4"],
   savedIds: [],
-  unreadByChannel: Object.fromEntries(seedChannels.map((c) => [c.id, c.unread ?? 0])),
+  unreadByChannel: {},
   theme: "dark",
   density: "comfortable",
 };
@@ -66,7 +57,6 @@ if (typeof window !== "undefined") {
         savedIds: parsed.savedIds ?? state.savedIds,
         theme: parsed.theme ?? state.theme,
         density: parsed.density ?? state.density,
-        channels: parsed.channels ?? state.channels,
       };
     }
   } catch {
@@ -84,7 +74,6 @@ function persist() {
         savedIds: state.savedIds,
         theme: state.theme,
         density: state.density,
-        channels: state.channels,
       }),
     );
   } catch {
@@ -224,35 +213,6 @@ export function markChannelRead(channelId: string) {
     ...state,
     unreadByChannel: { ...state.unreadByChannel, [channelId]: 0 },
   };
-  notify();
-}
-
-export function createChannel(data: { name: string; description?: string; isPrivate?: boolean }) {
-  const id = `c_${Date.now()}`;
-  const ch: Channel = {
-    id,
-    name: data.name,
-    private: data.isPrivate,
-    topic: data.description,
-    unread: 0,
-  };
-  state = {
-    ...state,
-    channels: [...state.channels, ch],
-    channelMessages: { ...state.channelMessages, [id]: [] },
-    unreadByChannel: { ...state.unreadByChannel, [id]: 0 },
-  };
-  persist();
-  notify();
-  return id;
-}
-
-export function deleteChannel(channelId: string) {
-  state = {
-    ...state,
-    channels: state.channels.filter((c) => c.id !== channelId),
-  };
-  persist();
   notify();
 }
 

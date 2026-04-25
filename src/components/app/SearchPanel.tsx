@@ -1,19 +1,15 @@
 import { useMemo, useState } from "react";
 import { Search, X, Hash, Lock, FileText, Calendar, User, SlidersHorizontal } from "lucide-react";
 import { MemberAvatar } from "./MemberAvatar";
-import {
-  channels,
-  members,
-  messagesByChannel,
-  getMember,
-  formatTime,
-  type Message,
-} from "@/lib/sample-data";
+import { members, getMember, formatTime, type Message } from "@/lib/sample-data";
+import { useStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
+import type { ChannelSummary } from "@/types/api.types";
 
 type Tab = "messages" | "channels" | "people" | "files";
 
 interface SearchPanelProps {
+  channels: ChannelSummary[];
   initialQuery?: string;
   onClose: () => void;
   onJumpChannel: (id: string) => void;
@@ -26,7 +22,12 @@ const TABS: { id: Tab; label: string }[] = [
   { id: "files", label: "Files" },
 ];
 
-export function SearchPanel({ initialQuery = "", onClose, onJumpChannel }: SearchPanelProps) {
+export function SearchPanel({
+  channels,
+  initialQuery = "",
+  onClose,
+  onJumpChannel,
+}: SearchPanelProps) {
   const [query, setQuery] = useState(initialQuery);
   const [tab, setTab] = useState<Tab>("messages");
   const [fromUser, setFromUser] = useState<string | "any">("any");
@@ -34,11 +35,13 @@ export function SearchPanel({ initialQuery = "", onClose, onJumpChannel }: Searc
   const [when, setWhen] = useState<"any" | "today" | "week" | "month">("any");
   const [filtersOpen, setFiltersOpen] = useState(false);
 
+  const channelMessages = useStore((s) => s.channelMessages);
+
   const allMessages = useMemo(() => {
-    return Object.entries(messagesByChannel).flatMap(([cid, msgs]) =>
+    return Object.entries(channelMessages).flatMap(([cid, msgs]) =>
       msgs.map((m) => ({ ...m, channelId: cid })),
     );
-  }, []);
+  }, [channelMessages]);
 
   const q = query.trim().toLowerCase();
 
@@ -59,7 +62,7 @@ export function SearchPanel({ initialQuery = "", onClose, onJumpChannel }: Searc
 
   const channelHits = useMemo(
     () => channels.filter((c) => !q || c.name.includes(q) || c.topic?.toLowerCase().includes(q)),
-    [q],
+    [channels, q],
   );
   const peopleHits = useMemo(
     () =>
@@ -298,7 +301,11 @@ export function SearchPanel({ initialQuery = "", onClose, onJumpChannel }: Searc
                     className="flex w-full items-start gap-3 rounded-lg border border-border bg-surface-elevated/40 p-3.5 text-left hover:border-foreground/20 hover:bg-surface-elevated/70"
                   >
                     <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-foreground/[0.05]">
-                      {c.private ? <Lock className="h-4 w-4" /> : <Hash className="h-4 w-4" />}
+                      {c.type === "private" ? (
+                        <Lock className="h-4 w-4" />
+                      ) : (
+                        <Hash className="h-4 w-4" />
+                      )}
                     </div>
                     <div className="min-w-0">
                       <div className="text-[13.5px] font-semibold text-foreground">#{c.name}</div>

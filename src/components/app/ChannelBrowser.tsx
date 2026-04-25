@@ -1,18 +1,24 @@
 import { useMemo, useState } from "react";
 import { Hash, Lock, Search, Users } from "lucide-react";
 import { Modal } from "./Modal";
-import { useStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
+import type { ChannelSummary } from "@/types/api.types";
 
 interface ChannelBrowserProps {
   open: boolean;
+  channels: ChannelSummary[];
   onClose: () => void;
   onSelect: (channelId: string) => void;
   onCreate: () => void;
 }
 
-export function ChannelBrowser({ open, onClose, onSelect, onCreate }: ChannelBrowserProps) {
-  const channels = useStore((s) => s.channels);
+export function ChannelBrowser({
+  open,
+  channels,
+  onClose,
+  onSelect,
+  onCreate,
+}: ChannelBrowserProps) {
   const [q, setQ] = useState("");
   const [filter, setFilter] = useState<"all" | "public" | "private">("all");
 
@@ -24,8 +30,8 @@ export function ChannelBrowser({ open, onClose, onSelect, onCreate }: ChannelBro
         !(c.topic ?? "").toLowerCase().includes(q.toLowerCase())
       )
         return false;
-      if (filter === "public" && c.private) return false;
-      if (filter === "private" && !c.private) return false;
+      if (filter === "public" && c.type === "private") return false;
+      if (filter === "private" && c.type !== "private") return false;
       return true;
     });
   }, [channels, q, filter]);
@@ -35,7 +41,7 @@ export function ChannelBrowser({ open, onClose, onSelect, onCreate }: ChannelBro
       open={open}
       onClose={onClose}
       title="Browse channels"
-      description={`Discover and join any of the ${channels.length} channels in Acme Inc.`}
+      description={`Discover and join any of the ${channels.length} channels in this workspace.`}
       size="lg"
       footer={
         <>
@@ -97,12 +103,16 @@ export function ChannelBrowser({ open, onClose, onSelect, onCreate }: ChannelBro
             className="flex w-full items-start gap-3 px-4 py-3 text-left hover:bg-foreground/[0.04]"
           >
             <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-foreground/[0.06] text-muted-foreground">
-              {c.private ? <Lock className="h-3.5 w-3.5" /> : <Hash className="h-3.5 w-3.5" />}
+              {c.type === "private" ? (
+                <Lock className="h-3.5 w-3.5" />
+              ) : (
+                <Hash className="h-3.5 w-3.5" />
+              )}
             </span>
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">
                 <span className="truncate text-[13.5px] font-semibold">{c.name}</span>
-                {c.private && (
+                {c.type === "private" && (
                   <span className="rounded-full border border-border bg-background/60 px-1.5 py-px text-[9.5px] uppercase tracking-wider text-muted-foreground">
                     Private
                   </span>
@@ -114,7 +124,7 @@ export function ChannelBrowser({ open, onClose, onSelect, onCreate }: ChannelBro
             </div>
             <div className="flex shrink-0 items-center gap-1 text-[11.5px] text-muted-foreground">
               <Users className="h-3 w-3" />
-              {Math.floor(Math.random() * 40) + 4}
+              {c.memberCount}
             </div>
           </button>
         ))}

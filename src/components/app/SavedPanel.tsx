@@ -1,19 +1,21 @@
 import { Bookmark, Hash, X } from "lucide-react";
 import { MemberAvatar } from "./MemberAvatar";
-import { messagesByChannel, channels, getMember, formatTime } from "@/lib/sample-data";
+import { getMember, formatTime } from "@/lib/sample-data";
+import { useStore } from "@/lib/store";
+import type { ChannelSummary } from "@/types/api.types";
 
 interface SavedPanelProps {
+  channels: ChannelSummary[];
   onClose: () => void;
   onJumpChannel: (id: string) => void;
 }
 
-export function SavedPanel({ onClose, onJumpChannel }: SavedPanelProps) {
-  // Pick a few "saved" messages for demo
-  const saved = [
-    { ...messagesByChannel.c2[0], channelId: "c2" },
-    { ...messagesByChannel.c2[2], channelId: "c2" },
-    { ...messagesByChannel.c1[0], channelId: "c1" },
-  ].filter(Boolean);
+export function SavedPanel({ channels, onClose, onJumpChannel }: SavedPanelProps) {
+  const channelMessages = useStore((s) => s.channelMessages);
+  const savedIds = useStore((s) => s.savedIds);
+  const saved = Object.entries(channelMessages)
+    .flatMap(([channelId, messages]) => messages.map((message) => ({ ...message, channelId })))
+    .filter((message) => savedIds.includes(message.id));
 
   return (
     <div className="flex h-full flex-col bg-background">

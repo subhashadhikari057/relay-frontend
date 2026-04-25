@@ -56,6 +56,23 @@ export type WorkspaceListResponse = {
   workspaces: WorkspaceSummary[];
 };
 
+export type WorkspaceMemberSummary = {
+  membershipId: string;
+  userId: string;
+  email: string;
+  fullName: string;
+  displayName: string | null;
+  role: WorkspaceRole;
+  joinedAt: string;
+  invitedById: string | null;
+  isActive: boolean;
+};
+
+export type WorkspaceMembersResponse = {
+  count: number;
+  members: WorkspaceMemberSummary[];
+};
+
 export type ChannelSummary = {
   id: string;
   workspaceId: string;
@@ -69,6 +86,53 @@ export type ChannelSummary = {
   isMember: boolean;
   createdAt: string;
   updatedAt: string;
+};
+
+export type ChannelListParams = {
+  limit?: number;
+  cursor?: string;
+  includeArchived?: boolean;
+};
+
+export type ChannelListResponse = {
+  count: number;
+  nextCursor?: string;
+  channels: ChannelSummary[];
+};
+
+export type CreateChannelRequest = {
+  name: string;
+  topic?: string;
+  description?: string;
+  type?: ChannelType;
+};
+
+export type ChannelMemberRole = "admin" | "member";
+
+export type ChannelMemberSummary = {
+  userId: string;
+  email: string;
+  fullName: string;
+  displayName: string | null;
+  role: ChannelMemberRole;
+  joinedAt: string;
+};
+
+export type ChannelMembersListParams = {
+  limit?: number;
+  cursor?: string;
+  includeArchived?: boolean;
+};
+
+export type ChannelMembersResponse = {
+  count: number;
+  nextCursor?: string;
+  members: ChannelMemberSummary[];
+};
+
+export type AddChannelMemberRequest = {
+  userId: string;
+  role?: ChannelMemberRole;
 };
 
 export type WorkspaceInviteResponse = {

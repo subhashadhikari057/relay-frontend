@@ -33,9 +33,10 @@ import { CreateChannelModal } from "./CreateChannelModal";
 import { InviteModal } from "./InviteModal";
 import { ShortcutsModal } from "./ShortcutsModal";
 import { ChannelBrowser } from "./ChannelBrowser";
-import { channels as seedChannels, members, getMember, type Message } from "@/lib/sample-data";
+import { members, getMember, type Message } from "@/lib/sample-data";
 import { useDensity, useStore, sendChannelMessage, markChannelRead } from "@/lib/store";
-import type { WorkspaceSummary } from "@/types/api.types";
+import { useChannelDetail, useWorkspaceChannels } from "@/queries/modules/channels.queries";
+import type { ChannelSummary, WorkspaceSummary } from "@/types/api.types";
 import { cn } from "@/lib/utils";
 
 type View =
@@ -50,16 +51,48 @@ interface WorkspaceShellProps {
 }
 
 export function WorkspaceShell({ workspace }: WorkspaceShellProps) {
-  const [view, setView] = useState<View>({ kind: "channel", channelId: "c2" });
+  const [view, setView] = useState<View>({ kind: "channel", channelId: "pending" });
   const [thread, setThread] = useState<Message | null>(null);
   const [details, setDetails] = useState(false);
+  const [detailsTab, setDetailsTab] = useState<"about" | "members" | "pinned" | "files">("about");
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [createChannelOpen, setCreateChannelOpen] = useState(false);
   const [inviteOpen, setInviteOpen] = useState(false);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [browseOpen, setBrowseOpen] = useState(false);
-  const channels = useStore((s) => s.channels);
+  const channelsQuery = useWorkspaceChannels(workspace?.id);
+  const channels = useMemo(
+    () => channelsQuery.data?.channels ?? [],
+    [channelsQuery.data?.channels],
+  );
+  const sidebarChannels = channels;
+  const activeChannelId = view.kind === "channel" ? view.channelId : null;
+  const selectedChannel = activeChannelId
+    ? sidebarChannels.find((channel) => channel.id === activeChannelId)
+    : null;
+  const channelDetailQuery = useChannelDetail(
+    workspace?.id,
+    details ? activeChannelId : null,
+    selectedChannel,
+  );
+  const channelDetail = channelDetailQuery.data ?? selectedChannel;
+
+  useEffect(() => {
+    if (!activeChannelId) return;
+    if (sidebarChannels.some((channel) => channel.id === activeChannelId)) return;
+
+    const firstChannel = sidebarChannels[0];
+    if (firstChannel) {
+      setView({ kind: "channel", channelId: firstChannel.id });
+    }
+  }, [activeChannelId, sidebarChannels]);
+
+  const jumpToDefaultChannel = () => {
+    const target = sidebarChannels[0]?.id;
+    if (!target) return;
+    selectChannel(target);
+  };
 
   // Cmd+K, Cmd+/
   useEffect(() => {
@@ -81,6 +114,7 @@ export function WorkspaceShell({ workspace }: WorkspaceShellProps) {
     setView({ kind: "channel", channelId: id });
     setThread(null);
     setDetails(false);
+    setDetailsTab("about");
     setMobileNavOpen(false);
     markChannelRead(id);
   };
@@ -91,7 +125,7 @@ export function WorkspaceShell({ workspace }: WorkspaceShellProps) {
     setMobileNavOpen(false);
   };
   const selectGlobalView = (v: GlobalView) => {
-    if (v === "home") setView({ kind: "channel", channelId: "c2" });
+    if (v === "home") jumpToDefaultChannel();
     else if (v === "dms") setView({ kind: "dm", userId: "u2" });
     else if (v === "activity") setView({ kind: "activity" });
     else if (v === "search") setView({ kind: "search" });
@@ -130,6 +164,9 @@ export function WorkspaceShell({ workspace }: WorkspaceShellProps) {
       <div className="hidden md:flex">
         <WorkspaceSidebar
           workspace={workspace}
+          channels={sidebarChannels}
+          channelsLoading={channelsQuery.isLoading}
+          channelsError={channelsQuery.error?.message}
           activeChannelId={view.kind === "channel" ? view.channelId : undefined}
           activeDmUserId={view.kind === "dm" ? view.userId : undefined}
           onSelectChannel={selectChannel}
@@ -156,6 +193,9 @@ export function WorkspaceShell({ workspace }: WorkspaceShellProps) {
             />
             <WorkspaceSidebar
               workspace={workspace}
+              channels={sidebarChannels}
+              channelsLoading={channelsQuery.isLoading}
+              channelsError={channelsQuery.error?.message}
               activeChannelId={view.kind === "channel" ? view.channelId : undefined}
               activeDmUserId={view.kind === "dm" ? view.userId : undefined}
               onSelectChannel={selectChannel}
@@ -177,21 +217,29 @@ export function WorkspaceShell({ workspace }: WorkspaceShellProps) {
           {view.kind === "search" && (
             <div className="flex min-w-0 flex-1 flex-col">
               <MobileTopBar onOpenNav={() => setMobileNavOpen(true)} title="Search" />
-              <SearchPanel onClose={() => selectChannel("c2")} onJumpChannel={selectChannel} />
+              <SearchPanel
+                channels={sidebarChannels}
+                onClose={jumpToDefaultChannel}
+                onJumpChannel={selectChannel}
+              />
             </div>
           )}
 
           {view.kind === "activity" && (
             <div className="flex min-w-0 flex-1 flex-col">
               <MobileTopBar onOpenNav={() => setMobileNavOpen(true)} title="Activity" />
-              <NotificationsPanel onClose={() => selectChannel("c2")} />
+              <NotificationsPanel onClose={jumpToDefaultChannel} />
             </div>
           )}
 
           {view.kind === "saved" && (
             <div className="flex min-w-0 flex-1 flex-col">
               <MobileTopBar onOpenNav={() => setMobileNavOpen(true)} title="Saved" />
-              <SavedPanel onClose={() => selectChannel("c2")} onJumpChannel={selectChannel} />
+              <SavedPanel
+                channels={sidebarChannels}
+                onClose={jumpToDefaultChannel}
+                onJumpChannel={selectChannel}
+              />
             </div>
           )}
 
@@ -210,6 +258,7 @@ export function WorkspaceShell({ workspace }: WorkspaceShellProps) {
           {view.kind === "channel" && (
             <ChannelView
               channelId={view.channelId}
+              channels={sidebarChannels}
               thread={thread}
               details={details}
               onOpenThread={(m) => {
@@ -218,6 +267,12 @@ export function WorkspaceShell({ workspace }: WorkspaceShellProps) {
               }}
               onToggleDetails={() => {
                 setDetails((d) => !d);
+                setDetailsTab("about");
+                setThread(null);
+              }}
+              onAddMembers={() => {
+                setDetails(true);
+                setDetailsTab("members");
                 setThread(null);
               }}
               onOpenSearch={() => setView({ kind: "search" })}
@@ -237,24 +292,35 @@ export function WorkspaceShell({ workspace }: WorkspaceShellProps) {
 
         {details && view.kind === "channel" && (
           <div className="w-full shrink-0 lg:w-[360px]">
-            <ChannelDetailsPanel
-              channel={channels.find((c) => c.id === view.channelId) ?? seedChannels[0]}
-              onClose={() => setDetails(false)}
-            />
+            {workspace?.id && channelDetail && (
+              <ChannelDetailsPanel
+                workspaceId={workspace.id}
+                channel={channelDetail}
+                initialTab={detailsTab}
+                onClose={() => setDetails(false)}
+              />
+            )}
           </div>
         )}
       </div>
 
       <CommandPalette
         open={paletteOpen}
+        channels={sidebarChannels}
         onClose={() => setPaletteOpen(false)}
         onJumpChannel={selectChannel}
       />
-      <CreateChannelModal open={createChannelOpen} onClose={() => setCreateChannelOpen(false)} />
+      <CreateChannelModal
+        open={createChannelOpen}
+        workspaceId={workspace?.id}
+        onClose={() => setCreateChannelOpen(false)}
+        onCreate={(channel) => setView({ kind: "channel", channelId: channel.id })}
+      />
       <InviteModal open={inviteOpen} onClose={() => setInviteOpen(false)} />
       <ShortcutsModal open={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
       <ChannelBrowser
         open={browseOpen}
+        channels={sidebarChannels}
         onClose={() => setBrowseOpen(false)}
         onSelect={selectChannel}
         onCreate={() => setCreateChannelOpen(true)}
@@ -279,10 +345,12 @@ function MobileTopBar({ onOpenNav, title }: { onOpenNav: () => void; title: stri
 
 interface ChannelViewProps {
   channelId: string;
+  channels: ChannelSummary[];
   thread: Message | null;
   details: boolean;
   onOpenThread: (m: Message) => void;
   onToggleDetails: () => void;
+  onAddMembers: () => void;
   onOpenSearch: () => void;
   onOpenNav: () => void;
   onOpenPalette: () => void;
@@ -292,25 +360,35 @@ interface ChannelViewProps {
 
 function ChannelView({
   channelId,
+  channels,
   thread,
   details,
   onOpenThread,
   onToggleDetails,
+  onAddMembers,
   onOpenSearch,
   onOpenNav,
   onOpenPalette,
   onOpenActivity,
   onOpenShortcuts,
 }: ChannelViewProps) {
-  const allChannels = useStore((s) => s.channels);
   const channelMessages = useStore((s) => s.channelMessages);
   const { density } = useDensity();
   const isCompact = density === "compact";
   const channel = useMemo(
-    () => allChannels.find((c) => c.id === channelId) ?? seedChannels[0],
-    [allChannels, channelId],
+    () => channels.find((item) => item.id === channelId) ?? channels[0],
+    [channels, channelId],
   );
-  const messages = channelMessages[channelId] ?? channelMessages.c1 ?? [];
+  const messages = channelMessages[channelId] ?? [];
+  const threadTarget = messages.find((m) => m.replies) ?? messages[0] ?? null;
+
+  if (!channel) {
+    return (
+      <main className="flex min-w-0 flex-1 items-center justify-center text-sm text-muted-foreground">
+        No channel selected.
+      </main>
+    );
+  }
 
   return (
     <main className="flex min-w-0 flex-1 flex-col">
@@ -332,7 +410,11 @@ function ChannelView({
           className="flex min-w-0 items-center gap-2 rounded-md px-1 py-1 -mx-1 hover:bg-foreground/[0.04]"
         >
           <span className="hidden h-7 w-7 items-center justify-center rounded-md bg-foreground/[0.04] sm:flex">
-            {channel.private ? <Lock className="h-3.5 w-3.5" /> : <Hash className="h-3.5 w-3.5" />}
+            {channel.type === "private" ? (
+              <Lock className="h-3.5 w-3.5" />
+            ) : (
+              <Hash className="h-3.5 w-3.5" />
+            )}
           </span>
           <h1 className="truncate text-[15px] font-semibold">{channel.name}</h1>
           <Star className="ml-1 hidden h-3.5 w-3.5 text-muted-foreground hover:text-foreground sm:inline" />
@@ -413,9 +495,13 @@ function ChannelView({
           </button>
 
           <button
-            onClick={() => onOpenThread(messages.find((m) => m.replies) ?? messages[0])}
+            onClick={() => {
+              if (!threadTarget) return;
+              onOpenThread(threadTarget);
+            }}
+            disabled={!threadTarget}
             className={cn(
-              "flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-foreground/[0.06] hover:text-foreground",
+              "flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-foreground/[0.06] hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40",
               thread && "bg-foreground/[0.06] text-foreground",
             )}
             title="Toggle thread"
@@ -443,7 +529,12 @@ function ChannelView({
 
       <div className="flex-1 overflow-y-auto">
         <div className={cn("mx-auto max-w-[920px]", isCompact ? "py-2" : "py-4")}>
-          <ChannelIntro name={channel.name} />
+          <ChannelIntro
+            name={channel.name}
+            topic={channel.topic}
+            description={channel.description}
+            onAddMembers={onAddMembers}
+          />
           <DateSeparator label="Today" />
           {messages.map((m, i) => {
             const prev = messages[i - 1];
@@ -487,7 +578,22 @@ function DateSeparator({ label }: { label: string }) {
   );
 }
 
-function ChannelIntro({ name }: { name: string }) {
+function ChannelIntro({
+  name,
+  topic,
+  description,
+  onAddMembers,
+}: {
+  name: string;
+  topic?: string | null;
+  description?: string | null;
+  onAddMembers?: () => void;
+}) {
+  const introText =
+    description?.trim() ||
+    topic?.trim() ||
+    "No description yet. Add one to give this channel context.";
+
   return (
     <div className="px-5 pb-2 pt-6">
       <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-foreground/[0.04] mb-3">
@@ -496,15 +602,12 @@ function ChannelIntro({ name }: { name: string }) {
       <h2 className="text-2xl font-semibold tracking-tight text-foreground">
         Welcome to <span className="text-foreground">#{name}</span>
       </h2>
-      <p className="mt-1 max-w-xl text-sm text-muted-foreground">
-        This is the very beginning of the <span className="text-foreground">#{name}</span> channel.
-        Share updates, ask questions, and keep the team in sync.
-      </p>
+      <p className="mt-1 max-w-xl text-sm text-muted-foreground">{introText}</p>
       <div className="mt-3 flex flex-wrap gap-2 text-[12px]">
-        <button className="rounded-md border border-border bg-surface-elevated/60 px-2.5 py-1 text-muted-foreground hover:text-foreground hover:border-foreground/30">
-          + Add description
-        </button>
-        <button className="rounded-md border border-border bg-surface-elevated/60 px-2.5 py-1 text-muted-foreground hover:text-foreground hover:border-foreground/30">
+        <button
+          onClick={onAddMembers}
+          className="rounded-md border border-border bg-surface-elevated/60 px-2.5 py-1 text-muted-foreground hover:text-foreground hover:border-foreground/30"
+        >
           + Add members
         </button>
       </div>

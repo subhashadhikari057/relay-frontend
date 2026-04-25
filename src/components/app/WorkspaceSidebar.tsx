@@ -14,12 +14,15 @@ import { ChannelRow } from "./ChannelRow";
 import { DMRow } from "./DMRow";
 import { WorkspaceAvatar } from "./WorkspaceAvatar";
 import { dms, getMember } from "@/lib/sample-data";
-import { useDensity, useStore } from "@/lib/store";
-import type { WorkspaceSummary } from "@/types/api.types";
+import { useDensity } from "@/lib/store";
+import type { ChannelSummary, WorkspaceSummary } from "@/types/api.types";
 import { cn } from "@/lib/utils";
 
 interface WorkspaceSidebarProps {
   workspace?: WorkspaceSummary | null;
+  channels: ChannelSummary[];
+  channelsLoading?: boolean;
+  channelsError?: string;
   activeChannelId?: string;
   activeDmUserId?: string;
   onSelectChannel: (id: string) => void;
@@ -32,6 +35,9 @@ interface WorkspaceSidebarProps {
 
 export function WorkspaceSidebar({
   workspace,
+  channels,
+  channelsLoading,
+  channelsError,
   activeChannelId,
   activeDmUserId,
   onSelectChannel,
@@ -41,8 +47,6 @@ export function WorkspaceSidebar({
   onOpenSaved,
   onBrowseChannels,
 }: WorkspaceSidebarProps) {
-  const channels = useStore((s) => s.channels);
-  const unreadByChannel = useStore((s) => s.unreadByChannel);
   const { density } = useDensity();
   const isCompact = density === "compact";
   const [openChannels, setOpenChannels] = useState(true);
@@ -117,12 +121,17 @@ export function WorkspaceSidebar({
           onToggle={() => setOpenChannels((v) => !v)}
           action={{ icon: Plus, label: "Add channel", onClick: onCreateChannel }}
         >
+          {channelsLoading && channels.length === 0 && (
+            <div className="px-2 py-1.5 text-[12px] text-muted-foreground">Loading channels...</div>
+          )}
+          {channelsError && channels.length === 0 && (
+            <div className="px-2 py-1.5 text-[12px] text-destructive">{channelsError}</div>
+          )}
           {channels.map((c) => {
-            const unread = unreadByChannel[c.id] ?? c.unread ?? 0;
             return (
               <ChannelRow
                 key={c.id}
-                channel={{ ...c, unread }}
+                channel={c}
                 active={c.id === activeChannelId}
                 compact={isCompact}
                 onClick={() => onSelectChannel(c.id)}

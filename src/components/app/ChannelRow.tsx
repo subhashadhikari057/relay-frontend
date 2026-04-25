@@ -1,16 +1,21 @@
 import { Hash, Lock } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { Channel } from "@/lib/sample-data";
+import type { ChannelSummary } from "@/types/api.types";
+
+type SidebarChannel = ChannelSummary & {
+  unread?: number;
+  mentions?: number;
+};
 
 interface ChannelRowProps {
-  channel: Channel;
+  channel: SidebarChannel;
   active?: boolean;
   compact?: boolean;
   onClick?: () => void;
 }
 
 export function ChannelRow({ channel, active, compact, onClick }: ChannelRowProps) {
-  const Icon = channel.private ? Lock : Hash;
+  const Icon = channel.type === "private" ? Lock : Hash;
   const hasUnread = (channel.unread ?? 0) > 0;
   return (
     <button

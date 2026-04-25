@@ -1,18 +1,26 @@
 import { useState } from "react";
 import { Hash, Lock } from "lucide-react";
-import { toast } from "sonner";
 import { Modal } from "./Modal";
-import { createChannel } from "@/lib/store";
+import { useCreateChannelMutation } from "@/queries/modules/channels.queries";
+import type { ChannelSummary } from "@/types/api.types";
 import { cn } from "@/lib/utils";
 
 interface CreateChannelModalProps {
   open: boolean;
+  workspaceId?: string | null;
   onClose: () => void;
-  onCreate?: (data: { id: string; name: string }) => void;
+  onCreate?: (channel: ChannelSummary) => void;
 }
 
-export function CreateChannelModal({ open, onClose, onCreate }: CreateChannelModalProps) {
+export function CreateChannelModal({
+  open,
+  workspaceId,
+  onClose,
+  onCreate,
+}: CreateChannelModalProps) {
+  const createChannel = useCreateChannelMutation();
   const [name, setName] = useState("");
+  const [topic, setTopic] = useState("");
   const [description, setDescription] = useState("");
   const [isPrivate, setIsPrivate] = useState(false);
 
@@ -24,14 +32,29 @@ export function CreateChannelModal({ open, onClose, onCreate }: CreateChannelMod
   const valid = slug.length >= 2;
 
   const submit = () => {
-    if (!valid) return;
-    const id = createChannel({ name: slug, description, isPrivate });
-    toast.success(`#${slug} created`, { description: "Channel is ready — invite your team." });
-    onCreate?.({ id, name: slug });
-    setName("");
-    setDescription("");
-    setIsPrivate(false);
-    onClose();
+    if (!valid || !workspaceId || createChannel.isPending) return;
+
+    createChannel.mutate(
+      {
+        workspaceId,
+        payload: {
+          name: slug,
+          topic: topic.trim() || undefined,
+          description: description.trim() || undefined,
+          type: isPrivate ? "private" : "public",
+        },
+      },
+      {
+        onSuccess: (channel) => {
+          onCreate?.(channel);
+          setName("");
+          setTopic("");
+          setDescription("");
+          setIsPrivate(false);
+          onClose();
+        },
+      },
+    );
   };
 
   return (
@@ -50,15 +73,15 @@ export function CreateChannelModal({ open, onClose, onCreate }: CreateChannelMod
           </button>
           <button
             onClick={submit}
-            disabled={!valid}
+            disabled={!valid || !workspaceId || createChannel.isPending}
             className={cn(
               "inline-flex h-8 items-center rounded-md px-3 text-[12.5px] font-semibold",
-              valid
+              valid && workspaceId && !createChannel.isPending
                 ? "bg-foreground text-background hover:opacity-90"
                 : "bg-foreground/[0.08] text-muted-foreground cursor-not-allowed",
             )}
           >
-            Create channel
+            {createChannel.isPending ? "Creating..." : "Create channel"}
           </button>
         </>
       }
@@ -81,6 +104,18 @@ export function CreateChannelModal({ open, onClose, onCreate }: CreateChannelMod
           Lowercase, no spaces. Will appear as{" "}
           <span className="text-foreground">#{slug || "channel-name"}</span>
         </p>
+      </div>
+
+      <div className="mb-4">
+        <label className="mb-1 block text-[12.5px] font-medium">
+          Topic <span className="text-muted-foreground">(optional)</span>
+        </label>
+        <input
+          value={topic}
+          onChange={(e) => setTopic(e.target.value)}
+          placeholder="What should people discuss here?"
+          className="h-9 w-full rounded-md border border-border bg-background/40 px-3 text-[13px] focus:border-foreground/30 focus:outline-none"
+        />
       </div>
 
       <div className="mb-4">

@@ -1,14 +1,18 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { X, Hash, Lock, Bell, Pin, FileText, Users, Star, Link2, ChevronRight } from "lucide-react";
-import { MemberAvatar } from "./MemberAvatar";
-import { members, type Channel } from "@/lib/sample-data";
+import { UserAvatar } from "./UserAvatar";
+import { AddChannelMemberModal } from "./AddChannelMemberModal";
+import { useChannelMembers } from "@/queries/modules/channels.queries";
+import type { ChannelMemberSummary, ChannelSummary } from "@/types/api.types";
 import { cn } from "@/lib/utils";
 
 type Tab = "about" | "members" | "pinned" | "files";
 
 interface ChannelDetailsPanelProps {
-  channel: Channel;
+  workspaceId: string;
+  channel: ChannelSummary;
   onClose: () => void;
+  initialTab?: Tab;
 }
 
 const TABS: { id: Tab; label: string }[] = [
@@ -18,8 +22,17 @@ const TABS: { id: Tab; label: string }[] = [
   { id: "files", label: "Files" },
 ];
 
-export function ChannelDetailsPanel({ channel, onClose }: ChannelDetailsPanelProps) {
-  const [tab, setTab] = useState<Tab>("about");
+export function ChannelDetailsPanel({
+  workspaceId,
+  channel,
+  onClose,
+  initialTab,
+}: ChannelDetailsPanelProps) {
+  const [tab, setTab] = useState<Tab>(initialTab ?? "about");
+
+  useEffect(() => {
+    setTab(initialTab ?? "about");
+  }, [channel.id, initialTab]);
 
   return (
     <aside className="flex h-full w-full flex-col border-l border-border bg-background">
@@ -36,7 +49,11 @@ export function ChannelDetailsPanel({ channel, onClose }: ChannelDetailsPanelPro
 
         <div className="mt-3 flex items-start gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-foreground/[0.05]">
-            {channel.private ? <Lock className="h-4 w-4" /> : <Hash className="h-4 w-4" />}
+            {channel.type === "private" ? (
+              <Lock className="h-4 w-4" />
+            ) : (
+              <Hash className="h-4 w-4" />
+            )}
           </div>
           <div className="min-w-0">
             <div className="flex items-center gap-1.5">
@@ -46,7 +63,7 @@ export function ChannelDetailsPanel({ channel, onClose }: ChannelDetailsPanelPro
               </button>
             </div>
             <p className="mt-0.5 text-[12px] text-muted-foreground">
-              {members.length} members · {channel.private ? "Private" : "Public"}
+              {channel.memberCount} members · {channel.type === "private" ? "Private" : "Public"}
             </p>
           </div>
         </div>
@@ -71,7 +88,9 @@ export function ChannelDetailsPanel({ channel, onClose }: ChannelDetailsPanelPro
 
       <div className="flex-1 overflow-y-auto">
         {tab === "about" && <AboutTab channel={channel} />}
-        {tab === "members" && <MembersTab />}
+        {tab === "members" && (
+          <MembersTab workspaceId={workspaceId} channelId={channel.id} channelType={channel.type} />
+        )}
         {tab === "pinned" && <PinnedTab />}
         {tab === "files" && <FilesTab />}
       </div>
@@ -111,7 +130,13 @@ function Row({
   );
 }
 
-function AboutTab({ channel }: { channel: Channel }) {
+function AboutTab({ channel }: { channel: ChannelSummary }) {
+  const createdAt = new Date(channel.createdAt).toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+
   return (
     <div>
       <Section title="Topic">
@@ -123,11 +148,8 @@ function AboutTab({ channel }: { channel: Channel }) {
 
       <Section title="Description">
         <p className="text-[13px] text-muted-foreground">
-          A space for the team to share updates, decisions, and collaborate in the open.
+          {channel.description?.trim() || "No description set"}
         </p>
-        <button className="mt-2 text-[12px] text-muted-foreground hover:text-foreground">
-          Edit description
-        </button>
       </Section>
 
       <Section title="Settings">
@@ -138,7 +160,7 @@ function AboutTab({ channel }: { channel: Channel }) {
 
       <Section title="Created">
         <p className="text-[12.5px] text-muted-foreground">
-          Created by <span className="text-foreground">Marcus Chen</span> on Jan 12, 2026.
+          Created on <span className="text-foreground">{createdAt}</span>.
         </p>
       </Section>
 
@@ -151,85 +173,105 @@ function AboutTab({ channel }: { channel: Channel }) {
   );
 }
 
-function MembersTab() {
+function MembersTab({
+  workspaceId,
+  channelId,
+  channelType,
+}: {
+  workspaceId: string;
+  channelId: string;
+  channelType: ChannelSummary["type"];
+}) {
+  const membersQuery = useChannelMembers(workspaceId, channelId);
+  const members = membersQuery.data?.members ?? [];
+  const [addOpen, setAddOpen] = useState(false);
+
   return (
     <div className="px-2 py-2">
-      <button className="mb-1 flex w-full items-center gap-2.5 rounded-md px-2 py-2 text-left text-[13px] text-foreground hover:bg-foreground/[0.04]">
+      <button
+        onClick={() => {
+          if (channelType !== "private") return;
+          setAddOpen(true);
+        }}
+        disabled={channelType !== "private"}
+        className={cn(
+          "mb-1 flex w-full items-center gap-2.5 rounded-md px-2 py-2 text-left text-[13px] text-foreground hover:bg-foreground/[0.04]",
+          channelType !== "private" && "opacity-50 cursor-not-allowed",
+        )}
+      >
         <div className="flex h-7 w-7 items-center justify-center rounded-md border border-dashed border-border text-muted-foreground">
           <Users className="h-3.5 w-3.5" />
         </div>
-        Add people
+        {channelType === "private" ? "Add people" : "Public channel (join to participate)"}
       </button>
-      {members.map((m) => (
-        <button
-          key={m.id}
-          className="flex w-full items-center gap-2.5 rounded-md px-2 py-1.5 text-left hover:bg-foreground/[0.04]"
-        >
-          <MemberAvatar member={m} size="sm" showPresence />
-          <div className="min-w-0 flex-1">
-            <div className="flex items-baseline gap-1.5">
-              <span className="truncate text-[13px] font-medium text-foreground">{m.name}</span>
-              {m.role && (
-                <span className="rounded bg-foreground/[0.06] px-1 py-px text-[10px] uppercase tracking-wider text-muted-foreground">
-                  {m.role}
-                </span>
-              )}
-            </div>
-            <div className="truncate text-[11.5px] text-muted-foreground">
-              @{m.handle} · {m.title}
-            </div>
-          </div>
-        </button>
+      <AddChannelMemberModal
+        open={addOpen}
+        workspaceId={workspaceId}
+        channelId={channelId}
+        onClose={() => setAddOpen(false)}
+      />
+      {membersQuery.isLoading && (
+        <p className="px-2 py-2 text-[12px] text-muted-foreground">Loading members...</p>
+      )}
+      {membersQuery.isError && (
+        <p className="px-2 py-2 text-[12px] text-destructive">
+          {membersQuery.error.message || "Could not load members."}
+        </p>
+      )}
+      {!membersQuery.isLoading && !membersQuery.isError && members.length === 0 && (
+        <p className="px-2 py-2 text-[12px] text-muted-foreground">
+          No members found in this channel.
+        </p>
+      )}
+      {members.map((member) => (
+        <MemberRow key={member.userId} member={member} />
       ))}
     </div>
   );
 }
 
 function PinnedTab() {
-  const items = [
-    { title: "Q2 roadmap doc", meta: "Pinned by Marcus · 3 days ago" },
-    { title: "Incident response playbook", meta: "Pinned by Alex · 2 weeks ago" },
-  ];
   return (
-    <div className="px-2 py-2">
-      {items.map((p, i) => (
-        <button
-          key={i}
-          className="flex w-full items-start gap-3 rounded-md px-2 py-2.5 text-left hover:bg-foreground/[0.04]"
-        >
-          <Pin className="mt-0.5 h-3.5 w-3.5 text-muted-foreground" />
-          <div className="min-w-0">
-            <div className="text-[13px] font-medium text-foreground">{p.title}</div>
-            <div className="text-[11.5px] text-muted-foreground">{p.meta}</div>
-          </div>
-        </button>
-      ))}
+    <div className="px-4 py-4">
+      <div className="rounded-md border border-border bg-foreground/[0.02] p-3 text-[12.5px] text-muted-foreground">
+        Pinned messages will appear here once message pins are connected in this panel.
+      </div>
     </div>
   );
 }
 
 function FilesTab() {
-  const files = [
-    { name: "presence-bench.pdf", meta: "PDF · 412 KB · Alex Mercer" },
-    { name: "thread-v3-mocks.fig", meta: "Figma · shared by Priya Nair" },
-    { name: "incident-2026-04-18.md", meta: "Markdown · shared by Jonas" },
-  ];
   return (
-    <div className="px-2 py-2">
-      {files.map((f, i) => (
-        <button
-          key={i}
-          className="flex w-full items-center gap-3 rounded-md px-2 py-2 text-left hover:bg-foreground/[0.04]"
-        >
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-foreground/[0.05]">
-            <FileText className="h-4 w-4" />
-          </div>
-          <div className="min-w-0">
-            <div className="truncate text-[13px] font-medium text-foreground">{f.name}</div>
-            <div className="truncate text-[11.5px] text-muted-foreground">{f.meta}</div>
-          </div>
-        </button>
-      ))}
+    <div className="px-4 py-4">
+      <div className="rounded-md border border-border bg-foreground/[0.02] p-3 text-[12.5px] text-muted-foreground">
+        Shared channel files will appear here once file listing is connected.
+      </div>
     </div>
+  );
+}
+
+function MemberRow({ member }: { member: ChannelMemberSummary }) {
+  const displayName = member.displayName?.trim() || member.fullName;
+  const joinedOn = new Date(member.joinedAt).toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+
+  return (
+    <button className="flex w-full items-center gap-2.5 rounded-md px-2 py-1.5 text-left hover:bg-foreground/[0.04]">
+      <UserAvatar name={displayName} className="h-7 w-7" />
+      <div className="min-w-0 flex-1">
+        <div className="flex items-baseline gap-1.5">
+          <span className="truncate text-[13px] font-medium text-foreground">{displayName}</span>
+          <span className="rounded bg-foreground/[0.06] px-1 py-px text-[10px] uppercase tracking-wider text-muted-foreground">
+            {member.role}
+          </span>
+        </div>
+        <div className="truncate text-[11.5px] text-muted-foreground">
+          {member.email} · Joined {joinedOn}
+        </div>
+      </div>
+    </button>
   );
 }

@@ -18,5 +18,16 @@ export const endpoints = {
     list: "/api/mobile/workspaces",
     byId: (workspaceId: string) => `/api/mobile/workspaces/${workspaceId}`,
     bySlug: (workspaceSlug: string) => `/api/mobile/workspaces/slug/${workspaceSlug}`,
+    members: (workspaceId: string) => `/api/mobile/workspaces/${workspaceId}/members`,
+  },
+  channels: {
+    list: (workspaceId: string) => `/api/mobile/workspaces/${workspaceId}/channels`,
+    create: (workspaceId: string) => `/api/mobile/workspaces/${workspaceId}/channels`,
+    byId: (workspaceId: string, channelId: string) =>
+      `/api/mobile/workspaces/${workspaceId}/channels/${channelId}`,
+    members: (workspaceId: string, channelId: string) =>
+      `/api/mobile/workspaces/${workspaceId}/channels/${channelId}/members`,
+    join: (workspaceId: string, channelId: string) =>
+      `/api/mobile/workspaces/${workspaceId}/channels/${channelId}/join`,
   },
 } as const;

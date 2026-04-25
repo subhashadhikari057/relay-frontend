@@ -11,12 +11,14 @@ import {
   ArrowRight,
   Sparkles,
 } from "lucide-react";
-import { channels, dms, getMember } from "@/lib/sample-data";
+import { dms, getMember } from "@/lib/sample-data";
 import { MemberAvatar } from "./MemberAvatar";
 import { cn } from "@/lib/utils";
+import type { ChannelSummary } from "@/types/api.types";
 
 interface CommandPaletteProps {
   open: boolean;
+  channels: ChannelSummary[];
   onClose: () => void;
   onJumpChannel?: (id: string) => void;
 }
@@ -30,7 +32,7 @@ type Item = {
   onSelect: () => void;
 };
 
-export function CommandPalette({ open, onClose, onJumpChannel }: CommandPaletteProps) {
+export function CommandPalette({ open, channels, onClose, onJumpChannel }: CommandPaletteProps) {
   const [query, setQuery] = useState("");
   const [activeIdx, setActiveIdx] = useState(0);
 
@@ -38,9 +40,10 @@ export function CommandPalette({ open, onClose, onJumpChannel }: CommandPaletteP
     const channelItems: Item[] = channels.map((c) => ({
       id: `c:${c.id}`,
       label: c.name,
-      hint: c.topic,
+      hint: c.topic ?? undefined,
       group: "Channels",
-      icon: c.private ? <Lock className="h-3.5 w-3.5" /> : <Hash className="h-3.5 w-3.5" />,
+      icon:
+        c.type === "private" ? <Lock className="h-3.5 w-3.5" /> : <Hash className="h-3.5 w-3.5" />,
       onSelect: () => {
         onJumpChannel?.(c.id);
         onClose();
@@ -97,7 +100,7 @@ export function CommandPalette({ open, onClose, onJumpChannel }: CommandPaletteP
       },
     ];
     return [...channelItems, ...dmItems, ...actions];
-  }, [onClose, onJumpChannel]);
+  }, [channels, onClose, onJumpChannel]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
