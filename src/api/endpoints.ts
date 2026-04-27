@@ -19,6 +19,7 @@ export const endpoints = {
     byId: (workspaceId: string) => `/api/mobile/workspaces/${workspaceId}`,
     bySlug: (workspaceSlug: string) => `/api/mobile/workspaces/slug/${workspaceSlug}`,
     members: (workspaceId: string) => `/api/mobile/workspaces/${workspaceId}/members`,
+    invitesAccept: "/api/mobile/workspaces/invites/accept",
   },
   dms: {
     list: (workspaceId: string) => `/api/mobile/workspaces/${workspaceId}/dms`,

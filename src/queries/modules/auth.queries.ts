@@ -2,10 +2,12 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { authModule } from "@/api/modules/auth.module";
 import { workspacesModule } from "@/api/modules/workspaces.module";
+import { workspaceInvitesModule } from "@/api/modules/workspace-invites.module";
 import { setAuthSessionState } from "@/lib/auth-session";
 import { clearCurrentUser, getCurrentUser, rememberCurrentUser } from "@/lib/current-user";
 import { clearCurrentWorkspace, rememberCurrentWorkspace } from "@/lib/current-workspace";
 import { allowOnboardingAccess } from "@/lib/onboarding-access";
+import { clearPendingInviteToken, getPendingInviteToken } from "@/lib/pending-invite";
 import { queryKeys } from "@/queries/keys";
 import type { ApiError } from "@/api/client";
 import type {
@@ -45,6 +47,47 @@ async function handleAuthSuccess(
   authModule.rememberAccessToken(data.accessToken);
   rememberCurrentUser(data.user);
   queryClient.setQueryData(queryKeys.auth.me(), data.user);
+
+  // If user arrived via invite link while logged out, we store the invite token locally.
+  // After auth succeeds, accept the invite first and redirect to the invited workspace.
+  const pendingInviteToken = getPendingInviteToken();
+  if (pendingInviteToken) {
+    try {
+      const accepted = await workspaceInvitesModule.acceptInvite(pendingInviteToken);
+      clearPendingInviteToken();
+
+      if (accepted.accessToken) {
+        authModule.rememberAccessToken(accepted.accessToken);
+      }
+      if (accepted.user) {
+        rememberCurrentUser(accepted.user);
+        queryClient.setQueryData(queryKeys.auth.me(), accepted.user);
+      }
+
+      if (accepted?.workspaceId) {
+        const invitedWorkspace =
+          accepted.activeWorkspace && accepted.activeWorkspace.id === accepted.workspaceId
+            ? accepted.activeWorkspace
+            : await workspacesModule.getById(accepted.workspaceId);
+        rememberCurrentWorkspace(invitedWorkspace);
+
+        if (typeof window !== "undefined") {
+          window.location.assign(`/app/${invitedWorkspace.slug}`);
+          return;
+        }
+
+        void navigate({
+          to: "/app/$workspaceSlug",
+          params: { workspaceSlug: invitedWorkspace.slug },
+        });
+        return;
+      }
+    } catch {
+      // Token may be expired/invalid or already accepted. Clear it and continue normal flow.
+      clearPendingInviteToken();
+    }
+  }
+
   const workspace =
     data.activeWorkspace ?? (await resolveWorkspaceAfterAuth(data.activeWorkspaceId));
 

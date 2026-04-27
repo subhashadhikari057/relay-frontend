@@ -238,6 +238,21 @@ export type WorkspaceInviteResponse = {
   expiresAt: string;
 };
 
+export type AcceptWorkspaceInviteRequest = {
+  token: string;
+};
+
+export type WorkspaceInviteAcceptResponse = {
+  success: boolean;
+  workspaceId: string;
+  role: WorkspaceRole;
+  accessToken?: string;
+  user?: AuthUser;
+  activeWorkspaceId?: string | null;
+  activeWorkspace?: WorkspaceSummary | null;
+  requiresOnboarding?: boolean;
+};
+
 export type UploadFileItem = {
   path: string;
   url: string;

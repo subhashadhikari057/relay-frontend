@@ -31,6 +31,7 @@ import { Route as SettingsMembersRouteImport } from './routes/settings.members'
 import { Route as SettingsIntegrationsRouteImport } from './routes/settings.integrations'
 import { Route as SettingsBillingRouteImport } from './routes/settings.billing'
 import { Route as SettingsAppearanceRouteImport } from './routes/settings.appearance'
+import { Route as JoinInviteTokenRouteImport } from './routes/join.$inviteToken'
 import { Route as AppWorkspaceSlugRouteImport } from './routes/app.$workspaceSlug'
 
 const StatusRoute = StatusRouteImport.update({
@@ -143,6 +144,11 @@ const SettingsAppearanceRoute = SettingsAppearanceRouteImport.update({
   path: '/appearance',
   getParentRoute: () => SettingsRoute,
 } as any)
+const JoinInviteTokenRoute = JoinInviteTokenRouteImport.update({
+  id: '/join/$inviteToken',
+  path: '/join/$inviteToken',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AppWorkspaceSlugRoute = AppWorkspaceSlugRouteImport.update({
   id: '/$workspaceSlug',
   path: '/$workspaceSlug',
@@ -164,6 +170,7 @@ export interface FileRoutesByFullPath {
   '/sign-up': typeof SignUpRoute
   '/status': typeof StatusRoute
   '/app/$workspaceSlug': typeof AppWorkspaceSlugRoute
+  '/join/$inviteToken': typeof JoinInviteTokenRoute
   '/settings/appearance': typeof SettingsAppearanceRoute
   '/settings/billing': typeof SettingsBillingRoute
   '/settings/integrations': typeof SettingsIntegrationsRoute
@@ -187,6 +194,7 @@ export interface FileRoutesByTo {
   '/sign-up': typeof SignUpRoute
   '/status': typeof StatusRoute
   '/app/$workspaceSlug': typeof AppWorkspaceSlugRoute
+  '/join/$inviteToken': typeof JoinInviteTokenRoute
   '/settings/appearance': typeof SettingsAppearanceRoute
   '/settings/billing': typeof SettingsBillingRoute
   '/settings/integrations': typeof SettingsIntegrationsRoute
@@ -213,6 +221,7 @@ export interface FileRoutesById {
   '/sign-up': typeof SignUpRoute
   '/status': typeof StatusRoute
   '/app/$workspaceSlug': typeof AppWorkspaceSlugRoute
+  '/join/$inviteToken': typeof JoinInviteTokenRoute
   '/settings/appearance': typeof SettingsAppearanceRoute
   '/settings/billing': typeof SettingsBillingRoute
   '/settings/integrations': typeof SettingsIntegrationsRoute
@@ -240,6 +249,7 @@ export interface FileRouteTypes {
     | '/sign-up'
     | '/status'
     | '/app/$workspaceSlug'
+    | '/join/$inviteToken'
     | '/settings/appearance'
     | '/settings/billing'
     | '/settings/integrations'
@@ -263,6 +273,7 @@ export interface FileRouteTypes {
     | '/sign-up'
     | '/status'
     | '/app/$workspaceSlug'
+    | '/join/$inviteToken'
     | '/settings/appearance'
     | '/settings/billing'
     | '/settings/integrations'
@@ -288,6 +299,7 @@ export interface FileRouteTypes {
     | '/sign-up'
     | '/status'
     | '/app/$workspaceSlug'
+    | '/join/$inviteToken'
     | '/settings/appearance'
     | '/settings/billing'
     | '/settings/integrations'
@@ -313,6 +325,7 @@ export interface RootRouteChildren {
   SignInRoute: typeof SignInRoute
   SignUpRoute: typeof SignUpRoute
   StatusRoute: typeof StatusRoute
+  JoinInviteTokenRoute: typeof JoinInviteTokenRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -471,6 +484,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SettingsAppearanceRouteImport
       parentRoute: typeof SettingsRoute
     }
+    '/join/$inviteToken': {
+      id: '/join/$inviteToken'
+      path: '/join/$inviteToken'
+      fullPath: '/join/$inviteToken'
+      preLoaderRoute: typeof JoinInviteTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/app/$workspaceSlug': {
       id: '/app/$workspaceSlug'
       path: '/$workspaceSlug'
@@ -533,6 +553,7 @@ const rootRouteChildren: RootRouteChildren = {
   SignInRoute: SignInRoute,
   SignUpRoute: SignUpRoute,
   StatusRoute: StatusRoute,
+  JoinInviteTokenRoute: JoinInviteTokenRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
