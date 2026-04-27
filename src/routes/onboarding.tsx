@@ -45,16 +45,16 @@ const steps = [
   },
   {
     key: "channel",
-    title: "Create your first channel",
-    subtitle: "Start with a default public general channel you can customize.",
+    title: "Add another channel",
+    subtitle: "Relay always creates #general. Optionally add one more channel now.",
     icon: Hash,
   },
 ] as const;
 
 const avatarColors = ["#5B5BD6", "#14B8A6", "#F59E0B", "#E879F9", "#F97316", "#0EA5E9"];
-const DEFAULT_CHANNEL_NAME = "general";
-const DEFAULT_CHANNEL_TOPIC = "Team-wide updates and announcements";
-const DEFAULT_CHANNEL_DESCRIPTION = "Default public channel for everyone in the workspace.";
+const DEFAULT_ADDITIONAL_CHANNEL_NAME = "engineering";
+const DEFAULT_ADDITIONAL_CHANNEL_TOPIC = "";
+const DEFAULT_ADDITIONAL_CHANNEL_DESCRIPTION = "";
 
 function Onboarding() {
   const navigate = useNavigate();
@@ -69,9 +69,11 @@ function Onboarding() {
   const [avatarIndex, setAvatarIndex] = useState(0);
   const [displayName, setDisplayName] = useState("");
   const [createFirstChannel, setCreateFirstChannel] = useState(true);
-  const [channelName, setChannelName] = useState(DEFAULT_CHANNEL_NAME);
-  const [channelTopic, setChannelTopic] = useState(DEFAULT_CHANNEL_TOPIC);
-  const [channelDescription, setChannelDescription] = useState(DEFAULT_CHANNEL_DESCRIPTION);
+  const [channelName, setChannelName] = useState(DEFAULT_ADDITIONAL_CHANNEL_NAME);
+  const [channelTopic, setChannelTopic] = useState(DEFAULT_ADDITIONAL_CHANNEL_TOPIC);
+  const [channelDescription, setChannelDescription] = useState(
+    DEFAULT_ADDITIONAL_CHANNEL_DESCRIPTION,
+  );
   const [userAvatarFile, setUserAvatarFile] = useState<File | null>(null);
   const [workspaceAvatarFile, setWorkspaceAvatarFile] = useState<File | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -417,11 +419,11 @@ function Onboarding() {
                     />
                     <span>
                       <span className="block font-medium text-foreground">
-                        Create first channel
+                        Create an additional channel
                       </span>
                       <span className="mt-1 block text-[12px] text-muted-foreground">
-                        Relay will create a default public <code>#general</code> channel either way.
-                        Keep this checked if you want to customize it now.
+                        Relay always creates a public <code>#general</code> channel for everyone.
+                        Keep this checked if you want to create one more channel now.
                       </span>
                     </span>
                   </label>
@@ -449,7 +451,7 @@ function Onboarding() {
                       </Labeled>
                       <Labeled
                         label="Description"
-                        hint="A slightly longer description for the default channel."
+                        hint="Optional. Give people a little context for what goes here."
                       >
                         <textarea
                           value={channelDescription}
@@ -462,8 +464,7 @@ function Onboarding() {
                         <div className="mb-1.5 flex items-center gap-1.5 text-foreground">
                           <Sparkles className="h-3 w-3" /> Default visibility
                         </div>
-                        Your first channel is always public so everyone in the workspace can join
-                        it.
+                        New channels created in onboarding are public so teammates can join.
                       </div>
                     </>
                   )}
@@ -471,10 +472,11 @@ function Onboarding() {
                     <div className="mb-1.5 flex items-center gap-1.5 text-foreground">
                       <Sparkles className="h-3 w-3" /> Suggestion
                     </div>
-                    Start with <code className="rounded bg-foreground/[0.06] px-1">general</code>,
-                    then add <code className="rounded bg-foreground/[0.06] px-1">engineering</code>{" "}
-                    or <code className="rounded bg-foreground/[0.06] px-1">design</code> once the
-                    team settles in.
+                    You'll start with{" "}
+                    <code className="rounded bg-foreground/[0.06] px-1">general</code>. Common next
+                    channels are{" "}
+                    <code className="rounded bg-foreground/[0.06] px-1">engineering</code> or{" "}
+                    <code className="rounded bg-foreground/[0.06] px-1">design</code>.
                   </div>
                 </div>
               )}
