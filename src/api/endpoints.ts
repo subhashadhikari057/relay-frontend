@@ -41,5 +41,9 @@ export const endpoints = {
       `/api/mobile/workspaces/${workspaceId}/channels/${channelId}/join`,
     messages: (workspaceId: string, channelId: string) =>
       `/api/mobile/workspaces/${workspaceId}/channels/${channelId}/messages`,
+    messageReactionToggle: (workspaceId: string, channelId: string, messageId: string) =>
+      `/api/mobile/workspaces/${workspaceId}/channels/${channelId}/messages/${messageId}/reaction/toggle`,
+    thread: (workspaceId: string, channelId: string, messageId: string) =>
+      `/api/mobile/workspaces/${workspaceId}/channels/${channelId}/messages/${messageId}/thread`,
   },
 } as const;

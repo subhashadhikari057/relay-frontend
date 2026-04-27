@@ -13,6 +13,10 @@ import {
   X,
   Info,
   Settings as SettingsIcon,
+  SmilePlus,
+  MessageSquare,
+  Bookmark,
+  Pencil,
 } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { GlobalSidebar, type GlobalView } from "./GlobalSidebar";
@@ -30,13 +34,20 @@ import { ShortcutsModal } from "./ShortcutsModal";
 import { ChannelBrowser } from "./ChannelBrowser";
 import { NewDmModal } from "./NewDmModal";
 import { useDensity, markChannelRead } from "@/lib/store";
-import { useChannelDetail, useWorkspaceChannels } from "@/queries/modules/channels.queries";
+import {
+  useChannelDetail,
+  useJoinChannelMutation,
+  useWorkspaceChannels,
+} from "@/queries/modules/channels.queries";
 import { useWorkspaceDms } from "@/queries/modules/dms.queries";
 import { useCurrentUser } from "@/queries/modules/auth.queries";
 import {
   useChannelMessages,
   useCreateChannelMessageMutation,
+  useCreateThreadReplyMutation,
+  useThreadReplies,
 } from "@/queries/modules/channel-messages.queries";
+import { useToggleChannelMessageReactionMutation } from "@/queries/modules/message-reactions.queries";
 import { UserAvatar } from "./UserAvatar";
 import type { ChannelSummary, WorkspaceSummary } from "@/types/api.types";
 import { cn } from "@/lib/utils";
@@ -401,6 +412,11 @@ function ChannelView({
   );
   const channelMessagesQuery = useChannelMessages(workspaceId, channelId);
   const createChannelMessageMutation = useCreateChannelMessageMutation();
+  const joinChannelMutation = useJoinChannelMutation();
+  const toggleReactionMutation = useToggleChannelMessageReactionMutation();
+  const [threadParent, setThreadParent] = useState<import("@/types/api.types").MessageItem | null>(
+    null,
+  );
   const messages = channelMessagesQuery.data?.messages ?? [];
   const timeline = [...messages].reverse(); // API returns newest-first
   const [hoveredMessageId, setHoveredMessageId] = useState<string | null>(null);
@@ -530,62 +546,125 @@ function ChannelView({
         </div>
       </header>
 
-      <div className="flex-1 overflow-y-auto">
-        <div className={cn("mx-auto max-w-[920px]", isCompact ? "py-2" : "py-4")}>
-          <ChannelIntro
-            name={channel.name}
-            topic={channel.topic}
-            description={channel.description}
-            onAddMembers={onAddMembers}
-          />
-          {channelMessagesQuery.isLoading && (
-            <div className="px-5 py-6 text-sm text-muted-foreground">Loading messages...</div>
-          )}
-          {channelMessagesQuery.isError && (
-            <div className="px-5 py-6 text-sm text-destructive">
-              {channelMessagesQuery.error.message || "Could not load messages."}
-            </div>
-          )}
-          {timeline.map((m, i) => {
-            const prev = timeline[i - 1];
-            const grouped =
-              !!prev &&
-              prev.type !== "system" &&
-              m.type !== "system" &&
-              prev.senderUserId === m.senderUserId &&
-              new Date(m.createdAt).getTime() - new Date(prev.createdAt).getTime() < 5 * 60 * 1000;
-            return (
-              <ChannelMessageItem
-                key={m.id}
-                message={m}
-                groupedWithPrev={grouped}
-                compact={isCompact}
-                isHovered={hoveredMessageId === m.id}
-                onHoverChange={(hovered) => setHoveredMessageId(hovered ? m.id : null)}
-                currentUserId={currentUserId}
-                currentUserAvatarColor={currentUserAvatarColor}
-              />
-            );
-          })}
+      <div className="flex min-w-0 flex-1">
+        <div className="min-w-0 flex-1 overflow-y-auto">
+          <div className={cn("mx-auto max-w-[920px]", isCompact ? "py-2" : "py-4")}>
+            <ChannelIntro
+              name={channel.name}
+              topic={channel.topic}
+              description={channel.description}
+              onAddMembers={onAddMembers}
+            />
+            {!channel.isMember && channel.type === "public" && (
+              <div className="px-5 pb-2">
+                <div className="flex items-center justify-between gap-3 rounded-lg border border-border bg-surface-elevated/60 px-3 py-2 text-sm">
+                  <div className="min-w-0">
+                    <div className="font-medium text-foreground">
+                      You haven't joined this channel
+                    </div>
+                    <div className="text-[12px] text-muted-foreground">
+                      Join <span className="font-medium text-foreground">#{channel.name}</span> to
+                      post messages.
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (!workspaceId) return;
+                      if (joinChannelMutation.isPending) return;
+                      joinChannelMutation.mutate({ workspaceId, channelId: channel.id });
+                    }}
+                    className="shrink-0 rounded-md bg-primary px-3 py-1.5 text-[13px] font-medium text-primary-foreground hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+                    disabled={!workspaceId || joinChannelMutation.isPending}
+                  >
+                    Join
+                  </button>
+                </div>
+              </div>
+            )}
+            {channelMessagesQuery.isLoading && (
+              <div className="px-5 py-6 text-sm text-muted-foreground">Loading messages...</div>
+            )}
+            {channelMessagesQuery.isError && (
+              <div className="px-5 py-6 text-sm text-destructive">
+                {channelMessagesQuery.error.message || "Could not load messages."}
+              </div>
+            )}
+            {timeline.map((m, i) => {
+              const prev = timeline[i - 1];
+              const grouped =
+                !!prev &&
+                prev.type !== "system" &&
+                m.type !== "system" &&
+                prev.senderUserId === m.senderUserId &&
+                new Date(m.createdAt).getTime() - new Date(prev.createdAt).getTime() <
+                  5 * 60 * 1000;
+              return (
+                <ChannelMessageItem
+                  key={m.id}
+                  message={m}
+                  groupedWithPrev={grouped}
+                  compact={isCompact}
+                  isHovered={hoveredMessageId === m.id}
+                  onHoverChange={(hovered) => setHoveredMessageId(hovered ? m.id : null)}
+                  currentUserId={currentUserId}
+                  currentUserAvatarColor={currentUserAvatarColor}
+                  workspaceId={workspaceId ?? null}
+                  channelId={channel.id}
+                  onToggleReaction={(emoji) => {
+                    if (!workspaceId) return;
+                    toggleReactionMutation.mutate({
+                      workspaceId,
+                      channelId: channel.id,
+                      messageId: m.id,
+                      emoji,
+                    });
+                  }}
+                  onOpenThread={() => setThreadParent(m)}
+                />
+              );
+            })}
+          </div>
         </div>
+
+        {workspaceId && threadParent && (
+          <ChannelThreadPanel
+            workspaceId={workspaceId}
+            channel={channel}
+            parentMessage={threadParent}
+            currentUserId={currentUserId}
+            currentUserAvatarColor={currentUserAvatarColor}
+            onClose={() => setThreadParent(null)}
+          />
+        )}
       </div>
 
       <div className="border-t border-border bg-background">
-        <Composer
-          placeholder={`Message #${channel.name}`}
-          compact={isCompact}
-          onSend={(content) => {
-            const next = content.trim();
-            if (!workspaceId) return;
-            if (!next) return;
-            if (createChannelMessageMutation.isPending) return;
-            createChannelMessageMutation.mutate({
-              workspaceId,
-              channelId,
-              payload: { content: next, type: "text" },
-            });
-          }}
-        />
+        <div
+          className={cn(
+            !channel.isMember && channel.type === "public" ? "pointer-events-none opacity-60" : "",
+          )}
+        >
+          <Composer
+            placeholder={
+              !channel.isMember && channel.type === "public"
+                ? `Join #${channel.name} to send messages`
+                : `Message #${channel.name}`
+            }
+            compact={isCompact}
+            onSend={(content) => {
+              const next = content.trim();
+              if (!workspaceId) return;
+              if (!next) return;
+              if (createChannelMessageMutation.isPending) return;
+              createChannelMessageMutation.mutate({
+                workspaceId,
+                channelId: channel.id,
+                payload: { content: next, type: "text" },
+              });
+            }}
+          />
+        </div>
       </div>
     </main>
   );
@@ -630,6 +709,10 @@ function ChannelMessageItem({
   onHoverChange,
   currentUserId,
   currentUserAvatarColor,
+  workspaceId,
+  channelId,
+  onToggleReaction,
+  onOpenThread,
 }: {
   message: import("@/types/api.types").MessageItem;
   groupedWithPrev?: boolean;
@@ -638,7 +721,15 @@ function ChannelMessageItem({
   onHoverChange: (hovered: boolean) => void;
   currentUserId: string;
   currentUserAvatarColor: string | null;
+  workspaceId: string | null;
+  channelId: string;
+  onToggleReaction: (emoji: string) => void;
+  onOpenThread: () => void;
 }) {
+  const [pickerOpen, setPickerOpen] = useState(false);
+  // Keep this in sync with backend ALLOWED_MESSAGE_REACTIONS.
+  const reactionOptions = ["👍", "❤️", "😂", "🎉", "🔥"] as const;
+
   if (message.type === "system") {
     return (
       <div className={cn("px-5", compact ? "py-1.5" : "py-2")}>
@@ -657,10 +748,17 @@ function ChannelMessageItem({
     ? currentUserAvatarColor || colorFromSeed(message.author.id)
     : colorFromSeed(message.author.id);
 
+  const reactions = message.reactionSummary ?? [];
+  const replyCount = message.threadReplyCount ?? 0;
+  const selectedReaction = message.myReaction;
+
   return (
     <div
       onMouseEnter={() => onHoverChange(true)}
-      onMouseLeave={() => onHoverChange(false)}
+      onMouseLeave={() => {
+        setPickerOpen(false);
+        onHoverChange(false);
+      }}
       className={cn(
         "group relative flex gap-3 px-5 transition-colors hover:bg-foreground/[0.02]",
         compact ? "gap-2 px-4" : "gap-3 px-5",
@@ -701,8 +799,223 @@ function ChannelMessageItem({
         >
           {message.content ?? ""}
         </div>
+
+        {reactions.length > 0 && (
+          <div className="mt-1.5 flex flex-wrap gap-1.5">
+            {reactions.map((r) => {
+              const mine = message.myReaction === r.emoji;
+              return (
+                <button
+                  key={r.emoji}
+                  type="button"
+                  onClick={() => onToggleReaction(r.emoji)}
+                  title={mine ? "Remove reaction" : "React"}
+                  className={cn(
+                    "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs transition-colors disabled:cursor-not-allowed",
+                    mine
+                      ? "border-foreground/30 bg-foreground/[0.06] text-foreground"
+                      : "border-border bg-surface-elevated/60 text-muted-foreground hover:border-foreground/20 hover:text-foreground",
+                  )}
+                >
+                  <span>{r.emoji}</span>
+                  <span className="tabular-nums">{r.count}</span>
+                </button>
+              );
+            })}
+          </div>
+        )}
+
+        {replyCount > 0 && (
+          <button
+            type="button"
+            onClick={onOpenThread}
+            className={cn(
+              "mt-1.5 inline-flex items-center gap-2 rounded-md px-2 py-1 -ml-2 text-xs font-medium text-muted-foreground hover:bg-foreground/[0.04] hover:text-foreground",
+              reactions.length === 0 && "mt-2",
+            )}
+          >
+            <span className="text-foreground">{replyCount} replies</span>
+            <span className="text-muted-foreground/70">View thread</span>
+          </button>
+        )}
       </div>
+
+      {/* Hover actions (UI first, wiring next) */}
+      <div
+        className={cn(
+          "absolute -top-3 right-6 flex items-center gap-0 rounded-lg border border-border bg-popover shadow-elegant transition-opacity",
+          isHovered ? "opacity-100" : "pointer-events-none opacity-0",
+        )}
+      >
+        {[
+          { icon: SmilePlus, label: "React" },
+          { icon: MessageSquare, label: "Reply in thread" },
+          { icon: Bookmark, label: "Save" },
+          { icon: Pencil, label: "Edit" },
+        ].map(({ icon: Icon, label }) => (
+          <button
+            key={label}
+            type="button"
+            onClick={() => {
+              if (label === "React") setPickerOpen(true);
+              if (label === "Reply in thread") onOpenThread();
+            }}
+            disabled={label === "Save" || label === "Edit"}
+            title={label === "Save" || label === "Edit" ? `${label} (wiring next)` : label}
+            className="flex h-8 w-8 items-center justify-center text-muted-foreground hover:bg-foreground/[0.06] hover:text-foreground first:rounded-l-lg last:rounded-r-lg disabled:cursor-not-allowed"
+          >
+            <Icon className="h-3.5 w-3.5" />
+          </button>
+        ))}
+      </div>
+
+      {pickerOpen && (
+        <div className="absolute right-6 top-10 z-30 flex gap-1 rounded-lg border border-border bg-popover p-1.5 shadow-elegant">
+          {reactionOptions.map((emoji) => (
+            <button
+              key={emoji}
+              type="button"
+              onClick={() => {
+                setPickerOpen(false);
+                onToggleReaction(emoji);
+              }}
+              className={cn(
+                "flex h-8 w-8 items-center justify-center rounded-md transition-colors",
+                selectedReaction === emoji
+                  ? "bg-foreground/[0.08] ring-1 ring-foreground/30"
+                  : "hover:bg-foreground/[0.06]",
+              )}
+              title={`React ${emoji}`}
+            >
+              {emoji}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
+  );
+}
+
+function ChannelThreadPanel({
+  workspaceId,
+  channel,
+  parentMessage,
+  currentUserId,
+  currentUserAvatarColor,
+  onClose,
+}: {
+  workspaceId: string;
+  channel: ChannelSummary;
+  parentMessage: import("@/types/api.types").MessageItem;
+  currentUserId: string;
+  currentUserAvatarColor: string | null;
+  onClose: () => void;
+}) {
+  const { density } = useDensity();
+  const isCompact = density === "compact";
+  const repliesQuery = useThreadReplies(workspaceId, channel.id, parentMessage.id);
+  const createReplyMutation = useCreateThreadReplyMutation();
+  const replies = repliesQuery.data?.messages ?? [];
+  const timeline = [...replies].reverse(); // newest-first -> oldest-first
+
+  return (
+    <aside className="hidden w-[360px] shrink-0 border-l border-border bg-background lg:flex lg:flex-col">
+      <div className="flex items-center justify-between border-b border-border px-4 py-3">
+        <div>
+          <div className="text-sm font-semibold text-foreground">Thread</div>
+          <div className="text-[11px] text-muted-foreground">#{channel.name}</div>
+        </div>
+        <button
+          type="button"
+          onClick={onClose}
+          className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-foreground/[0.06] hover:text-foreground"
+          title="Close"
+        >
+          <X className="h-4 w-4" />
+        </button>
+      </div>
+
+      <div className="flex-1 overflow-y-auto">
+        <div className="border-b border-border px-5 py-4">
+          <div className="flex items-start gap-3">
+            <UserAvatar
+              name={parentMessage.author.displayName?.trim() || parentMessage.author.fullName}
+              avatarUrl={parentMessage.author.avatarUrl}
+              className="h-8 w-8 rounded-md"
+            />
+            <div className="min-w-0">
+              <div className="flex items-baseline gap-2">
+                <span className="text-sm font-semibold text-foreground">
+                  {parentMessage.author.displayName?.trim() || parentMessage.author.fullName}
+                </span>
+                <span className="text-[11px] text-muted-foreground">
+                  {formatMessageTimestamp(parentMessage.createdAt, "header")}
+                </span>
+              </div>
+              <div className="mt-1 text-[14px] leading-relaxed text-foreground/90">
+                {parentMessage.content ?? ""}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="px-5 py-2 text-[11px] text-muted-foreground">
+          {repliesQuery.isLoading ? "Loading replies..." : `${timeline.length} replies`}
+        </div>
+
+        {repliesQuery.isError && (
+          <div className="px-5 pb-3 text-sm text-destructive">
+            {repliesQuery.error.message || "Could not load thread replies."}
+          </div>
+        )}
+
+        <div className="pb-3">
+          {timeline.map((m, i) => {
+            const prev = timeline[i - 1];
+            const grouped =
+              !!prev &&
+              prev.type !== "system" &&
+              m.type !== "system" &&
+              prev.senderUserId === m.senderUserId &&
+              new Date(m.createdAt).getTime() - new Date(prev.createdAt).getTime() < 5 * 60 * 1000;
+            return (
+              <ChannelMessageItem
+                key={m.id}
+                message={m}
+                groupedWithPrev={grouped}
+                compact={isCompact}
+                isHovered={false}
+                onHoverChange={() => {}}
+                currentUserId={currentUserId}
+                currentUserAvatarColor={currentUserAvatarColor}
+                workspaceId={workspaceId}
+                channelId={channel.id}
+                onToggleReaction={() => {}}
+                onOpenThread={() => {}}
+              />
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="border-t border-border">
+        <Composer
+          placeholder="Reply in thread"
+          compact
+          onSend={(content) => {
+            const next = content.trim();
+            if (!next) return;
+            if (createReplyMutation.isPending) return;
+            createReplyMutation.mutate({
+              workspaceId,
+              channelId: channel.id,
+              messageId: parentMessage.id,
+              payload: { content: next, type: "text" },
+            });
+          }}
+        />
+      </div>
+    </aside>
   );
 }
 

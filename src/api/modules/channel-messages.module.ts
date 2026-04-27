@@ -25,7 +25,35 @@ async function create(
   return http.post<MessageItem>(endpoints.channels.messages(workspaceId, channelId), payload);
 }
 
+async function listThreadReplies(
+  workspaceId: string,
+  channelId: string,
+  messageId: string,
+  params?: ListMessagesParams,
+): Promise<ListMessagesResponse> {
+  return http.get<ListMessagesResponse>(
+    endpoints.channels.thread(workspaceId, channelId, messageId),
+    {
+      params,
+    },
+  );
+}
+
+async function createThreadReply(
+  workspaceId: string,
+  channelId: string,
+  messageId: string,
+  payload: CreateMessageRequest,
+): Promise<MessageItem> {
+  return http.post<MessageItem>(
+    endpoints.channels.thread(workspaceId, channelId, messageId),
+    payload,
+  );
+}
+
 export const channelMessagesModule = {
   list,
   create,
+  listThreadReplies,
+  createThreadReply,
 };

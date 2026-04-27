@@ -44,5 +44,9 @@ export const queryKeys = {
       [...queryKeys.channels.workspace(workspaceId), "messages", channelId] as const,
     messagesList: (workspaceId: string, channelId: string, filters?: unknown) =>
       [...queryKeys.channels.messages(workspaceId, channelId), filters ?? {}] as const,
+    threads: (workspaceId: string, channelId: string, messageId: string) =>
+      [...queryKeys.channels.workspace(workspaceId), "thread", channelId, messageId] as const,
+    threadList: (workspaceId: string, channelId: string, messageId: string, filters?: unknown) =>
+      [...queryKeys.channels.threads(workspaceId, channelId, messageId), filters ?? {}] as const,
   },
 } as const;

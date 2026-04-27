@@ -120,6 +120,11 @@ export type MessageAuthorSummary = {
   avatarUrl: string | null;
 };
 
+export type MessageReactionSummary = {
+  emoji: string;
+  count: number;
+};
+
 export type MessageItem = {
   id: string;
   workspaceId: string;
@@ -140,7 +145,7 @@ export type MessageItem = {
   threadReplyCount: number;
   canEdit: boolean;
   canDelete: boolean;
-  reactionSummary: unknown[];
+  reactionSummary: MessageReactionSummary[];
   myReaction: string | null;
   isPinned: boolean;
   pinnedAt: string | null;

@@ -36,10 +36,15 @@ async function addMember(workspaceId: string, channelId: string, payload: AddCha
   return http.post(endpoints.channels.members(workspaceId, channelId), payload);
 }
 
+async function join(workspaceId: string, channelId: string) {
+  return http.post(endpoints.channels.join(workspaceId, channelId));
+}
+
 export const channelsModule = {
   list,
   create,
   getById,
   listMembers,
   addMember,
+  join,
 };

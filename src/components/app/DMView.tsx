@@ -1,4 +1,4 @@
-import { Phone, Video, Info, Star } from "lucide-react";
+import { Phone, Video, Info, Star, SmilePlus, MessageSquare, Bookmark, Pencil } from "lucide-react";
 import { useState } from "react";
 import { UserAvatar } from "./UserAvatar";
 import { Composer } from "./Composer";
@@ -31,6 +31,7 @@ function formatTimestamp(ts: string, variant: "header" | "grouped") {
     hour12: true,
   });
 
+  if (variant === "grouped") return time;
   if (isSameDay(d, now)) return time;
 
   const date = d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
@@ -223,6 +224,9 @@ function DmMessageItem({
   currentUserAvatarColor?: string | null;
 }) {
   const [hover, setHover] = useState(false);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  // Keep this in sync with backend ALLOWED_MESSAGE_REACTIONS.
+  const reactionOptions = ["👍", "❤️", "😂", "🎉", "🔥"] as const;
 
   if (message.type === "system") {
     return (
@@ -242,10 +246,16 @@ function DmMessageItem({
     ? currentUserAvatarColor || colorFromSeed(message.author.id)
     : colorFromSeed(message.author.id);
 
+  const reactions = message.reactionSummary ?? [];
+  const replyCount = message.threadReplyCount ?? 0;
+
   return (
     <div
       onMouseEnter={() => setHover(true)}
-      onMouseLeave={() => setHover(false)}
+      onMouseLeave={() => {
+        setPickerOpen(false);
+        setHover(false);
+      }}
       className={cn(
         "group relative flex gap-3 px-5 transition-colors hover:bg-foreground/[0.02]",
         compact ? "gap-2 px-4" : "gap-3 px-5",
@@ -286,7 +296,87 @@ function DmMessageItem({
         >
           {message.content ?? ""}
         </div>
+
+        {reactions.length > 0 && (
+          <div className="mt-1.5 flex flex-wrap gap-1.5">
+            {reactions.map((r) => {
+              const mine = message.myReaction === r.emoji;
+              return (
+                <button
+                  key={r.emoji}
+                  type="button"
+                  disabled
+                  title="Reactions wiring next"
+                  className={cn(
+                    "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs transition-colors disabled:cursor-not-allowed",
+                    mine
+                      ? "border-foreground/30 bg-foreground/[0.06] text-foreground"
+                      : "border-border bg-surface-elevated/60 text-muted-foreground hover:border-foreground/20 hover:text-foreground",
+                  )}
+                >
+                  <span>{r.emoji}</span>
+                  <span className="tabular-nums">{r.count}</span>
+                </button>
+              );
+            })}
+          </div>
+        )}
+
+        {replyCount > 0 && (
+          <button
+            type="button"
+            disabled
+            title="Thread view wiring next"
+            className={cn(
+              "mt-1.5 inline-flex items-center gap-2 rounded-md px-2 py-1 -ml-2 text-xs font-medium text-muted-foreground hover:bg-foreground/[0.04] hover:text-foreground disabled:cursor-not-allowed disabled:hover:bg-transparent",
+              reactions.length === 0 && "mt-2",
+            )}
+          >
+            <span className="text-foreground">{replyCount} replies</span>
+            <span className="text-muted-foreground/70">View thread</span>
+          </button>
+        )}
       </div>
+
+      <div
+        className={cn(
+          "absolute -top-3 right-6 flex items-center gap-0 rounded-lg border border-border bg-popover shadow-elegant transition-opacity",
+          hover ? "opacity-100" : "pointer-events-none opacity-0",
+        )}
+      >
+        {[
+          { icon: SmilePlus, label: "React" },
+          { icon: MessageSquare, label: "Reply in thread" },
+          { icon: Bookmark, label: "Save" },
+          { icon: Pencil, label: "Edit" },
+        ].map(({ icon: Icon, label }) => (
+          <button
+            key={label}
+            type="button"
+            disabled
+            title={`${label} (wiring next)`}
+            className="flex h-8 w-8 items-center justify-center text-muted-foreground hover:bg-foreground/[0.06] hover:text-foreground first:rounded-l-lg last:rounded-r-lg disabled:cursor-not-allowed"
+          >
+            <Icon className="h-3.5 w-3.5" />
+          </button>
+        ))}
+      </div>
+
+      {pickerOpen && (
+        <div className="absolute right-6 top-10 z-30 flex gap-1 rounded-lg border border-border bg-popover p-1.5 shadow-elegant">
+          {reactionOptions.map((emoji) => (
+            <button
+              key={emoji}
+              type="button"
+              disabled
+              className="flex h-8 w-8 items-center justify-center rounded-md hover:bg-foreground/[0.06] disabled:cursor-not-allowed"
+              title={`React ${emoji} (wiring next)`}
+            >
+              {emoji}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

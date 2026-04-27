@@ -24,6 +24,11 @@ type AddChannelMemberInput = {
   payload: AddChannelMemberRequest;
 };
 
+type JoinChannelInput = {
+  workspaceId: string;
+  channelId: string;
+};
+
 const defaultChannelListParams = {
   limit: 100,
   includeArchived: false,
@@ -141,6 +146,48 @@ export function useAddChannelMemberMutation() {
     },
     onError: (error) => {
       toast.error(error.message || "Could not add member.");
+    },
+  });
+}
+
+export function useJoinChannelMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation<unknown, ApiError, JoinChannelInput>({
+    mutationFn: ({ workspaceId, channelId }) => channelsModule.join(workspaceId, channelId),
+    onSuccess: (_data, variables) => {
+      // Optimistically mark channel as joined across list/detail caches.
+      queryClient.setQueryData<ChannelSummary>(
+        queryKeys.channels.detail(variables.workspaceId, variables.channelId),
+        (current) => (current ? { ...current, isMember: true } : current),
+      );
+      queryClient.setQueryData<ChannelListResponse>(
+        queryKeys.channels.list(variables.workspaceId, defaultChannelListParams),
+        (current) => {
+          if (!current) return current;
+          return {
+            ...current,
+            channels: current.channels.map((c) =>
+              c.id === variables.channelId ? { ...c, isMember: true } : c,
+            ),
+          };
+        },
+      );
+
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.channels.detail(variables.workspaceId, variables.channelId),
+      });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.channels.lists(variables.workspaceId),
+      });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.channels.members(variables.workspaceId, variables.channelId),
+      });
+
+      toast.success("Joined channel", { description: "You can now post messages." });
+    },
+    onError: (error) => {
+      toast.error(error.message || "Could not join channel.");
     },
   });
 }
