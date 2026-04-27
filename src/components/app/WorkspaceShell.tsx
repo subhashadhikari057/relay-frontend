@@ -550,6 +550,8 @@ function ChannelView({
             const prev = timeline[i - 1];
             const grouped =
               !!prev &&
+              prev.type !== "system" &&
+              m.type !== "system" &&
               prev.senderUserId === m.senderUserId &&
               new Date(m.createdAt).getTime() - new Date(prev.createdAt).getTime() < 5 * 60 * 1000;
             return (
@@ -637,6 +639,18 @@ function ChannelMessageItem({
   currentUserId: string;
   currentUserAvatarColor: string | null;
 }) {
+  if (message.type === "system") {
+    return (
+      <div className={cn("px-5", compact ? "py-1.5" : "py-2")}>
+        <div className="flex items-center justify-center">
+          <div className="rounded-full border border-border bg-surface-elevated/70 px-3 py-1 text-[12px] text-muted-foreground">
+            {message.content?.trim() || "System event"}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   const authorName = message.author.displayName?.trim() || message.author.fullName;
   const isCurrentUser = message.senderUserId === currentUserId;
   const fallbackColor = isCurrentUser
