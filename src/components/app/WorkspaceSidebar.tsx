@@ -131,7 +131,14 @@ export function WorkspaceSidebar({
           action={{ icon: Plus, label: "Add channel", onClick: onCreateChannel }}
         >
           {channelsLoading && channels.length === 0 && (
-            <div className="px-2 py-1.5 text-[12px] text-muted-foreground">Loading channels...</div>
+            <div className="space-y-1 px-2 py-1.5">
+              {Array.from({ length: 4 }).map((_, index) => (
+                <div
+                  key={`channel-skeleton-${index}`}
+                  className="h-7 animate-pulse rounded-md bg-sidebar-accent/50"
+                />
+              ))}
+            </div>
           )}
           {channelsError && channels.length === 0 && (
             <div className="px-2 py-1.5 text-[12px] text-destructive">{channelsError}</div>

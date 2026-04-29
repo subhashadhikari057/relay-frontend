@@ -32,13 +32,15 @@ export function useChannelMessages(
   channelId?: string | null,
   params: ListMessagesParams = defaultListParams,
 ) {
+  const hasValidChannelId = Boolean(channelId && channelId !== "pending");
+
   return useQuery<ListMessagesResponse, ApiError>({
     queryKey:
-      workspaceId && channelId
+      workspaceId && hasValidChannelId
         ? queryKeys.channels.messagesList(workspaceId, channelId, params)
         : queryKeys.channels.messagesList("missing-workspace", "missing-channel", params),
     queryFn: () => channelMessagesModule.list(workspaceId as string, channelId as string, params),
-    enabled: Boolean(workspaceId && channelId),
+    enabled: Boolean(workspaceId && hasValidChannelId),
     staleTime: 15_000,
     gcTime: 10 * 60_000,
   });

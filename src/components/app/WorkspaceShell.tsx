@@ -444,6 +444,7 @@ function ChannelView({
   );
   const messages = channelMessagesQuery.data?.messages ?? [];
   const timeline = [...messages].reverse(); // API returns newest-first
+  const showInitialMessagesLoading = channelMessagesQuery.isLoading && timeline.length === 0;
   const [hoveredMessageId, setHoveredMessageId] = useState<string | null>(null);
 
   if (!channel) {
@@ -607,9 +608,7 @@ function ChannelView({
                 </div>
               </div>
             )}
-            {channelMessagesQuery.isLoading && (
-              <div className="px-5 py-6 text-sm text-muted-foreground">Loading messages...</div>
-            )}
+            {showInitialMessagesLoading && <MessageTimelineSkeleton compact={isCompact} />}
             {channelMessagesQuery.isError && (
               <div className="px-5 py-6 text-sm text-destructive">
                 {channelMessagesQuery.error.message || "Could not load messages."}
@@ -716,6 +715,28 @@ function formatMessageTimestamp(ts: string, variant: "header" | "grouped") {
   if (isSameDay(d, now)) return time;
   const date = d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
   return `${date}, ${time}`;
+}
+
+function MessageTimelineSkeleton({ compact }: { compact?: boolean }) {
+  return (
+    <div className={cn("space-y-3 px-5 py-4", compact && "space-y-2 px-4 py-3")}>
+      {Array.from({ length: 6 }).map((_, index) => (
+        <div key={`msg-skeleton-${index}`} className="flex gap-3">
+          <div
+            className={cn(
+              "shrink-0 animate-pulse rounded-md bg-foreground/10",
+              compact ? "h-7 w-7" : "h-9 w-9",
+            )}
+          />
+          <div className="min-w-0 flex-1 space-y-2 pt-0.5">
+            <div className="h-3 w-32 animate-pulse rounded bg-foreground/10" />
+            <div className="h-3 w-[85%] animate-pulse rounded bg-foreground/10" />
+            <div className="h-3 w-[60%] animate-pulse rounded bg-foreground/10" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
 }
 
 function colorFromSeed(seed: string) {
