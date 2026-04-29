@@ -63,6 +63,20 @@ interface WorkspaceShellProps {
   workspace?: WorkspaceSummary | null;
 }
 
+function getLastChannelStorageKey(workspaceId: string) {
+  return `relay:last-channel:${workspaceId}`;
+}
+
+function readLastChannelForWorkspace(workspaceId?: string | null) {
+  if (!workspaceId || typeof window === "undefined") return null;
+  return window.localStorage.getItem(getLastChannelStorageKey(workspaceId));
+}
+
+function writeLastChannelForWorkspace(workspaceId: string | undefined, channelId: string) {
+  if (!workspaceId || typeof window === "undefined") return;
+  window.localStorage.setItem(getLastChannelStorageKey(workspaceId), channelId);
+}
+
 export function WorkspaceShell({ workspace }: WorkspaceShellProps) {
   const { data: currentUser } = useCurrentUser();
   const currentUserId = currentUser?.id ?? "";
@@ -102,11 +116,17 @@ export function WorkspaceShell({ workspace }: WorkspaceShellProps) {
     if (!activeChannelId) return;
     if (sidebarChannels.some((channel) => channel.id === activeChannelId)) return;
 
+    const lastChannelId = readLastChannelForWorkspace(workspace?.id);
+    if (lastChannelId && sidebarChannels.some((channel) => channel.id === lastChannelId)) {
+      setView({ kind: "channel", channelId: lastChannelId });
+      return;
+    }
+
     const firstChannel = sidebarChannels[0];
     if (firstChannel) {
       setView({ kind: "channel", channelId: firstChannel.id });
     }
-  }, [activeChannelId, sidebarChannels]);
+  }, [activeChannelId, sidebarChannels, workspace?.id]);
 
   const jumpToDefaultChannel = () => {
     const target = sidebarChannels[0]?.id;
@@ -132,6 +152,7 @@ export function WorkspaceShell({ workspace }: WorkspaceShellProps) {
 
   const selectChannel = (id: string) => {
     setView({ kind: "channel", channelId: id });
+    writeLastChannelForWorkspace(workspace?.id, id);
     setDetails(false);
     setDetailsTab("about");
     setMobileNavOpen(false);
@@ -344,7 +365,7 @@ export function WorkspaceShell({ workspace }: WorkspaceShellProps) {
         open={createChannelOpen}
         workspaceId={workspace?.id}
         onClose={() => setCreateChannelOpen(false)}
-        onCreate={(channel) => setView({ kind: "channel", channelId: channel.id })}
+        onCreate={(channel) => selectChannel(channel.id)}
       />
       <InviteModal
         open={inviteOpen}

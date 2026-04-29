@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Copy, Check, Mail } from "lucide-react";
+import { Copy, Check, Mail, Plus, X } from "lucide-react";
 import { toast } from "sonner";
 import { Modal } from "./Modal";
 import { workspacesModule } from "@/api/modules/workspaces.module";
@@ -14,11 +14,32 @@ export function InviteModal({
   onClose: () => void;
   workspaceId?: string | null;
 }) {
-  const [emails, setEmails] = useState("");
+  const [inviteInput, setInviteInput] = useState("");
+  const [invites, setInvites] = useState<string[]>([]);
   const [copied, setCopied] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [lastInviteLink, setLastInviteLink] = useState("");
   const link = lastInviteLink || "Create an invite first to get share link";
+  const canSubmit = invites.length > 0 && Boolean(workspaceId) && !submitting;
+
+  const addInvite = () => {
+    const email = inviteInput.trim().toLowerCase();
+    if (!email) return;
+
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailPattern.test(email)) {
+      toast.error("Enter a valid email address.");
+      return;
+    }
+
+    if (invites.includes(email)) {
+      toast.error("That teammate is already in the invite list.");
+      return;
+    }
+
+    setInvites((current) => [...current, email]);
+    setInviteInput("");
+  };
 
   const copy = () => {
     if (!lastInviteLink) return;
@@ -34,23 +55,14 @@ export function InviteModal({
       return;
     }
 
-    const parsedEmails = Array.from(
-      new Set(
-        emails
-          .split(/[,\n]/g)
-          .map((value) => value.trim().toLowerCase())
-          .filter(Boolean),
-      ),
-    );
-
-    if (parsedEmails.length === 0) return;
+    if (invites.length === 0) return;
 
     setSubmitting(true);
     let sent = 0;
     let failed = 0;
 
     try {
-      for (const email of parsedEmails) {
+      for (const email of invites) {
         try {
           const created = await workspacesModule.inviteMember(workspaceId, {
             email,
@@ -75,7 +87,8 @@ export function InviteModal({
         toast.error("No invites were sent.");
       }
 
-      setEmails("");
+      setInvites([]);
+      setInviteInput("");
       if (sent > 0) {
         onClose();
       }
@@ -100,10 +113,10 @@ export function InviteModal({
           </button>
           <button
             onClick={send}
-            disabled={!emails.trim() || !workspaceId || submitting}
+            disabled={!canSubmit}
             className={cn(
               "inline-flex h-8 items-center gap-1.5 rounded-md px-3 text-[12.5px] font-semibold",
-              emails.trim() && workspaceId && !submitting
+              canSubmit
                 ? "bg-foreground text-background hover:opacity-90"
                 : "bg-foreground/[0.08] text-muted-foreground cursor-not-allowed",
             )}
@@ -114,16 +127,51 @@ export function InviteModal({
       }
     >
       <div className="mb-5">
-        <label className="mb-1 block text-[12.5px] font-medium">Email addresses</label>
-        <textarea
-          value={emails}
-          onChange={(e) => setEmails(e.target.value)}
-          placeholder="taylor@acme.com, jordan@acme.com"
-          rows={3}
-          className="w-full resize-none rounded-md border border-border bg-background/40 px-3 py-2 text-[13px] focus:border-foreground/30 focus:outline-none"
-        />
+        <label className="mb-1 block text-[12.5px] font-medium">Invite by email</label>
+        <div className="flex gap-2">
+          <input
+            value={inviteInput}
+            onChange={(event) => setInviteInput(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") {
+                event.preventDefault();
+                addInvite();
+              }
+            }}
+            placeholder="teammate@company.com"
+            className="block h-10 flex-1 rounded-md border border-border bg-background/40 px-3 text-sm placeholder:text-muted-foreground/60 focus:border-foreground/30 focus:outline-none"
+          />
+          <button
+            type="button"
+            onClick={addInvite}
+            className="inline-flex items-center gap-1 rounded-md border border-border bg-background/40 px-3 text-[13px] transition hover:border-foreground/30"
+          >
+            <Plus className="h-3.5 w-3.5" /> Add
+          </button>
+        </div>
+        {invites.length > 0 && (
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            {invites.map((email, index) => (
+              <span
+                key={email}
+                className="inline-flex items-center gap-1.5 rounded-full border border-border bg-background/50 py-1 pl-2.5 pr-1 text-[12px]"
+              >
+                {email}
+                <button
+                  type="button"
+                  onClick={() =>
+                    setInvites((current) => current.filter((_, itemIndex) => itemIndex !== index))
+                  }
+                  className="flex h-4 w-4 items-center justify-center rounded-full text-muted-foreground transition hover:bg-foreground/10 hover:text-foreground"
+                >
+                  <X className="h-2.5 w-2.5" />
+                </button>
+              </span>
+            ))}
+          </div>
+        )}
         <p className="mt-1 text-[11.5px] text-muted-foreground">
-          Separate multiple emails with commas.
+          Add teammates one by one, then send all invites together.
         </p>
       </div>
 
