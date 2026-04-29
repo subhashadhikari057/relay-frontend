@@ -118,6 +118,7 @@ export type MessageAuthorSummary = {
   fullName: string;
   displayName: string | null;
   avatarUrl: string | null;
+  avatarColor: string | null;
 };
 
 export type MessageReactionSummary = {
@@ -236,6 +237,12 @@ export type WorkspaceInviteResponse = {
   inviteId: string;
   inviteToken: string;
   expiresAt: string;
+};
+
+export type InviteWorkspaceMemberRequest = {
+  email: string;
+  role: Exclude<WorkspaceRole, "owner">;
+  expiresInDays?: number;
 };
 
 export type AcceptWorkspaceInviteRequest = {

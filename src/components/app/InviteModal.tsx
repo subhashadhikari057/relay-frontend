@@ -2,28 +2,86 @@ import { useState } from "react";
 import { Copy, Check, Mail } from "lucide-react";
 import { toast } from "sonner";
 import { Modal } from "./Modal";
+import { workspacesModule } from "@/api/modules/workspaces.module";
 import { cn } from "@/lib/utils";
 
-export function InviteModal({ open, onClose }: { open: boolean; onClose: () => void }) {
+export function InviteModal({
+  open,
+  onClose,
+  workspaceId,
+}: {
+  open: boolean;
+  onClose: () => void;
+  workspaceId?: string | null;
+}) {
   const [emails, setEmails] = useState("");
   const [copied, setCopied] = useState(false);
-  const link = "https://relay.app/join/acme-x82h-q1";
+  const [submitting, setSubmitting] = useState(false);
+  const [lastInviteLink, setLastInviteLink] = useState("");
+  const link = lastInviteLink || "Create an invite first to get share link";
 
   const copy = () => {
+    if (!lastInviteLink) return;
     navigator.clipboard.writeText(link);
     setCopied(true);
     toast.success("Invite link copied");
     setTimeout(() => setCopied(false), 1500);
   };
 
-  const send = () => {
-    if (!emails.trim()) return;
-    const count = emails.split(",").filter((e) => e.trim()).length;
-    toast.success(`Sent ${count} invite${count === 1 ? "" : "s"}`, {
-      description: "We'll let you know when they accept.",
-    });
-    setEmails("");
-    onClose();
+  const send = async () => {
+    if (!workspaceId) {
+      toast.error("Workspace is not ready yet.");
+      return;
+    }
+
+    const parsedEmails = Array.from(
+      new Set(
+        emails
+          .split(/[,\n]/g)
+          .map((value) => value.trim().toLowerCase())
+          .filter(Boolean),
+      ),
+    );
+
+    if (parsedEmails.length === 0) return;
+
+    setSubmitting(true);
+    let sent = 0;
+    let failed = 0;
+
+    try {
+      for (const email of parsedEmails) {
+        try {
+          const created = await workspacesModule.inviteMember(workspaceId, {
+            email,
+            role: "member",
+          });
+          const base = window.location.origin.replace(/\/$/, "");
+          setLastInviteLink(`${base}/join/${created.inviteToken}`);
+          sent += 1;
+        } catch {
+          failed += 1;
+        }
+      }
+
+      if (sent > 0) {
+        toast.success(`Sent ${sent} invite${sent === 1 ? "" : "s"}`, {
+          description:
+            failed > 0
+              ? `${failed} failed. Check duplicates/existing members.`
+              : "Invites created successfully.",
+        });
+      } else {
+        toast.error("No invites were sent.");
+      }
+
+      setEmails("");
+      if (sent > 0) {
+        onClose();
+      }
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -42,15 +100,15 @@ export function InviteModal({ open, onClose }: { open: boolean; onClose: () => v
           </button>
           <button
             onClick={send}
-            disabled={!emails.trim()}
+            disabled={!emails.trim() || !workspaceId || submitting}
             className={cn(
               "inline-flex h-8 items-center gap-1.5 rounded-md px-3 text-[12.5px] font-semibold",
-              emails.trim()
+              emails.trim() && workspaceId && !submitting
                 ? "bg-foreground text-background hover:opacity-90"
                 : "bg-foreground/[0.08] text-muted-foreground cursor-not-allowed",
             )}
           >
-            <Mail className="h-3.5 w-3.5" /> Send invites
+            <Mail className="h-3.5 w-3.5" /> {submitting ? "Sending..." : "Send invites"}
           </button>
         </>
       }
@@ -75,10 +133,12 @@ export function InviteModal({ open, onClose }: { open: boolean; onClose: () => v
           <input
             readOnly
             value={link}
+            aria-label="Latest invite link"
             className="h-full flex-1 bg-transparent px-3 text-[12.5px] focus:outline-none"
           />
           <button
             onClick={copy}
+            disabled={!lastInviteLink}
             className="flex h-full items-center gap-1.5 border-l border-border bg-background/60 px-3 text-[12.5px] hover:bg-background"
           >
             {copied ? (

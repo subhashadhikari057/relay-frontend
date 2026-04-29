@@ -1,8 +1,10 @@
 import { http } from "@/api/client";
 import { endpoints } from "@/api/endpoints";
 import type {
+  InviteWorkspaceMemberRequest,
   WorkspaceListResponse,
   WorkspaceMembersResponse,
+  WorkspaceInviteResponse,
   WorkspaceSummary,
 } from "@/types/api.types";
 
@@ -22,9 +24,20 @@ async function listMembers(workspaceId: string): Promise<WorkspaceMembersRespons
   return http.get<WorkspaceMembersResponse>(endpoints.workspaces.members(workspaceId));
 }
 
+async function inviteMember(
+  workspaceId: string,
+  payload: InviteWorkspaceMemberRequest,
+): Promise<WorkspaceInviteResponse> {
+  return http.post<WorkspaceInviteResponse>(
+    endpoints.workspaces.invitesCreate(workspaceId),
+    payload,
+  );
+}
+
 export const workspacesModule = {
   listMine,
   getById,
   getBySlug,
   listMembers,
+  inviteMember,
 };

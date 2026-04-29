@@ -346,7 +346,11 @@ export function WorkspaceShell({ workspace }: WorkspaceShellProps) {
         onClose={() => setCreateChannelOpen(false)}
         onCreate={(channel) => setView({ kind: "channel", channelId: channel.id })}
       />
-      <InviteModal open={inviteOpen} onClose={() => setInviteOpen(false)} />
+      <InviteModal
+        open={inviteOpen}
+        onClose={() => setInviteOpen(false)}
+        workspaceId={workspace?.id}
+      />
       <ShortcutsModal open={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
       <ChannelBrowser
         open={browseOpen}
@@ -770,7 +774,7 @@ function ChannelMessageItem({
           <UserAvatar
             name={authorName}
             avatarUrl={message.author.avatarUrl}
-            avatarColor={message.author.avatarUrl ? null : fallbackColor}
+            avatarColor={message.author.avatarColor ?? fallbackColor}
             className={cn("rounded-md", compact ? "h-7 w-7" : "h-9 w-9")}
           />
         ) : (
